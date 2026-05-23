@@ -1,0 +1,6 @@
+services:
+  - type: worker
+    name: advanced-auto-rename-bot
+    env: docker
+    autoDeploy: true
+    plan: free
