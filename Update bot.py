@@ -1,0 +1,1 @@
+plugins=dict(root="plugins")
