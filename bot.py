@@ -1,4 +1,5 @@
 import os
+import asyncio
 import subprocess
 from threading import Thread
 
@@ -20,7 +21,7 @@ from config import (
 os.makedirs("downloads", exist_ok=True)
 os.makedirs("thumbnails", exist_ok=True)
 
-# Flask app
+# Flask App
 web = Flask(__name__)
 
 @web.route("/")
@@ -38,7 +39,7 @@ app = Client(
     bot_token=BOT_TOKEN
 )
 
-# START MESSAGE
+# START
 @app.on_message(filters.command("start"))
 async def start(client, message):
 
@@ -85,6 +86,7 @@ async def setprefix(client, message):
     global PREFIX
 
     try:
+
         PREFIX = message.text.split(
             None, 1
         )[1]
@@ -106,6 +108,7 @@ async def setsuffix(client, message):
     global SUFFIX
 
     try:
+
         SUFFIX = message.text.split(
             None, 1
         )[1]
@@ -140,21 +143,22 @@ async def rename_file(client, message):
 
     old_name = file.file_name
 
-    # Rename format
+    # Rename Format
     new_name = (
         f"{PREFIX} "
         f"{old_name} "
         f"{SUFFIX}"
     )
 
-    # Queue add
+    # Queue Add
     QUEUE.append(new_name)
 
-    # Download
+    # Download File
     path = await message.download(
         file_name=f"downloads/{new_name}"
     )
 
+    # Metadata Output
     metadata_path = (
         f"downloads/meta_{new_name}"
     )
@@ -188,7 +192,7 @@ async def rename_file(client, message):
 
     thumb = "thumbnails/thumb.jpg"
 
-    # Upload
+    # Upload File
     if os.path.exists(thumb):
 
         await message.reply_document(
@@ -211,15 +215,25 @@ async def rename_file(client, message):
     if os.path.exists(metadata_path):
         os.remove(metadata_path)
 
-    # Queue remove
+    # Queue Remove
     if new_name in QUEUE:
         QUEUE.remove(new_name)
 
-# Run bot
+# Run Telegram Bot
 def run_bot():
+
+    print("✅ Telegram Bot Starting")
+
+    loop = asyncio.new_event_loop()
+
+    asyncio.set_event_loop(loop)
+
     app.run()
 
-Thread(target=run_bot).start()
+Thread(
+    target=run_bot,
+    daemon=True
+).start()
 
 # Flask Port
 PORT = int(
@@ -227,8 +241,9 @@ PORT = int(
 )
 
 print("✅ Bot Started Successfully")
+print("✅ Flask Running")
 
 web.run(
     host="0.0.0.0",
     port=PORT
-)
+)    
