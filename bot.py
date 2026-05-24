@@ -1,14 +1,19 @@
-import os
-import asyncio
+  import os
 import subprocess
-from threading import Thread
-
 from flask import Flask
-
 from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
-from config import API_ID, API_HASH, BOT_TOKEN
+
+# =========================
+# CONFIG
+# =========================
+API_ID = 20879824
+API_HASH = "5f70a9a12a4bb8cc322bed62bc6007ce"
+BOT_TOKEN = "PUT_YOUR_BOT_TOKEN_HERE"  # ⚠️ don't hardcode in public repo
+OWNER_ID = 7340960697
+
+MONGO_URL = "mongodb+srv://rupamedical:dQv9oKG7QK93BkIh@james.oufkybu.mongodb.net/?appName=james"
 
 
 # =========================
@@ -29,13 +34,7 @@ def home():
 
 
 # =========================
-# QUEUE
-# =========================
-QUEUE = []
-
-
-# =========================
-# TELEGRAM BOT
+# BOT CLIENT
 # =========================
 app = Client(
     "renamebot",
@@ -45,6 +44,11 @@ app = Client(
 )
 
 
+QUEUE = []
+PREFIX = "MovieHub"
+SUFFIX = "x265"
+
+
 # =========================
 # START COMMAND
 # =========================
@@ -52,69 +56,57 @@ app = Client(
 async def start(client, message):
 
     buttons = InlineKeyboardMarkup([
-        [
-            InlineKeyboardButton("⚙ Settings", callback_data="settings")
-        ],
-        [
-            InlineKeyboardButton("📢 Updates", url="https://t.me/yourchannel")
-        ]
+        [InlineKeyboardButton("⚙ Settings", callback_data="settings")],
+        [InlineKeyboardButton("📢 Updates", url="https://t.me/yourchannel")]
     ])
 
-    text = """
-🔥 ADVANCED AUTO RENAME BOT 🔥
-
-✅ Features
-• Metadata Mode
-• Prefix / Suffix
-• Queue System
-• x264/x265 Tags
-• Thumbnail Support
-• Bold Captions
-"""
-
-    await message.reply_text(text, reply_markup=buttons)
+    await message.reply_text(
+        "🔥 AUTO RENAME BOT IS RUNNING 🔥",
+        reply_markup=buttons
+    )
 
 
 # =========================
-# PREFIX / SUFFIX
+# PREFIX
 # =========================
-PREFIX = "@MovieHub"
-SUFFIX = "x265"
-
-
 @app.on_message(filters.command("setprefix"))
 async def setprefix(client, message):
     global PREFIX
 
+    if message.from_user.id != OWNER_ID:
+        return await message.reply_text("❌ Not allowed")
+
     try:
         PREFIX = message.text.split(None, 1)[1]
-        await message.reply_text(f"✅ Prefix Saved: `{PREFIX}`")
-
+        await message.reply_text(f"✅ Prefix set: {PREFIX}")
     except:
         await message.reply_text("Usage: /setprefix text")
 
 
+# =========================
+# SUFFIX
+# =========================
 @app.on_message(filters.command("setsuffix"))
 async def setsuffix(client, message):
     global SUFFIX
 
+    if message.from_user.id != OWNER_ID:
+        return await message.reply_text("❌ Not allowed")
+
     try:
         SUFFIX = message.text.split(None, 1)[1]
-        await message.reply_text(f"✅ Suffix Saved: `{SUFFIX}`")
-
+        await message.reply_text(f"✅ Suffix set: {SUFFIX}")
     except:
         await message.reply_text("Usage: /setsuffix text")
 
 
 # =========================
-# THUMBNAIL SAVE
+# THUMBNAIL
 # =========================
 @app.on_message(filters.photo)
 async def save_thumb(client, message):
-
     await message.download(file_name="thumbnails/thumb.jpg")
-
-    await message.reply_text("✅ Thumbnail Saved Successfully")
+    await message.reply_text("✅ Thumbnail Saved")
 
 
 # =========================
@@ -127,90 +119,56 @@ async def rename_file(client, message):
     old_name = file.file_name
 
     new_name = f"{PREFIX} {old_name} {SUFFIX}"
-
     QUEUE.append(new_name)
 
-    # download file
     path = await message.download(file_name=f"downloads/{new_name}")
+    output_path = f"downloads/encoded_{new_name}"
 
-    metadata_path = f"downloads/meta_{new_name}"
-
-    # ffmpeg metadata
-    cmd = [
+    subprocess.run([
         "ffmpeg",
         "-i", path,
         "-map", "0",
         "-c", "copy",
-        "-metadata", "title=Encoded By Rename Bot",
-        metadata_path
-    ]
-
-    subprocess.run(cmd)
+        "-metadata", "title=Encoded By Bot",
+        output_path
+    ])
 
     caption = f"""
-✅ File Renamed Successfully
+✅ RENAMED SUCCESS
 
-📂 File Name: `{new_name}`
-
-⚡ Features Applied
-• Metadata Added
-• x265 Tag Added
-• Queue Processed
-
-🤖 Powered By: @YourBot
+📂 {new_name}
+⚡ Metadata Added
 """
 
     thumb = "thumbnails/thumb.jpg"
 
     if os.path.exists(thumb):
-        await message.reply_document(
-            document=metadata_path,
-            thumb=thumb,
-            caption=caption
-        )
+        await message.reply_document(output_path, thumb=thumb, caption=caption)
     else:
-        await message.reply_document(
-            document=metadata_path,
-            caption=caption
-        )
+        await message.reply_document(output_path, caption=caption)
 
     # cleanup
     if os.path.exists(path):
         os.remove(path)
 
-    if os.path.exists(metadata_path):
-        os.remove(metadata_path)
+    if os.path.exists(output_path):
+        os.remove(output_path)
 
     if new_name in QUEUE:
         QUEUE.remove(new_name)
 
 
 # =========================
-# RUN BOT IN BACKGROUND THREAD
+# START EVERYTHING CLEANLY
 # =========================
-def run_bot():
+if __name__ == "__main__":
 
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
+    print("🚀 Starting Bot...")
 
-    print("🚀 Telegram Bot Starting")
+    # start bot
+    app.start()
+    print("✅ Bot Started")
 
-    async def start_bot():
-        await app.start()
-        print("✅ Telegram Bot Started")
-        await asyncio.Event().wait()
-
-    loop.run_until_complete(start_bot())
-
-
-Thread(target=run_bot, daemon=True).start()
-
-
-# =========================
-# START FLASK (RENDER PORT)
-# =========================
-PORT = int(os.environ.get("PORT", 10000))
-
-print("🌐 Flask Starting...")
-
-web.run(host="0.0.0.0", port=PORT)        
+    # start flask (Render needs PORT)
+    PORT = int(os.environ.get("PORT", 10000))
+    web.run(host="0.0.0.0", port=PORT)      
