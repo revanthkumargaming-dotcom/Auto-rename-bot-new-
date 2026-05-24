@@ -6,32 +6,37 @@ from threading import Thread
 from flask import Flask
 
 from pyrogram import Client, filters
-from pyrogram.types import (
-    InlineKeyboardMarkup,
-    InlineKeyboardButton
-)
+from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
-from config import (
-    API_ID,
-    API_HASH,
-    BOT_TOKEN
-)
+from config import API_ID, API_HASH, BOT_TOKEN
 
-# Create folders
+
+# =========================
+# FOLDERS
+# =========================
 os.makedirs("downloads", exist_ok=True)
 os.makedirs("thumbnails", exist_ok=True)
 
-# Flask App
+
+# =========================
+# FLASK APP
+# =========================
 web = Flask(__name__)
 
 @web.route("/")
 def home():
     return "Bot Running Successfully"
 
-# Queue
+
+# =========================
+# QUEUE
+# =========================
 QUEUE = []
 
-# Telegram Bot
+
+# =========================
+# TELEGRAM BOT
+# =========================
 app = Client(
     "renamebot",
     api_id=API_ID,
@@ -39,29 +44,26 @@ app = Client(
     bot_token=BOT_TOKEN
 )
 
-# START
+
+# =========================
+# START COMMAND
+# =========================
 @app.on_message(filters.command("start"))
 async def start(client, message):
 
     buttons = InlineKeyboardMarkup([
         [
-            InlineKeyboardButton(
-                "⚙ Settings",
-                callback_data="settings"
-            )
+            InlineKeyboardButton("⚙ Settings", callback_data="settings")
         ],
         [
-            InlineKeyboardButton(
-                "📢 Updates",
-                url="https://t.me/yourchannel"
-            )
+            InlineKeyboardButton("📢 Updates", url="https://t.me/yourchannel")
         ]
     ])
 
     text = """
-**🔥 ADVANCED AUTO RENAME BOT 🔥**
+🔥 ADVANCED AUTO RENAME BOT 🔥
 
-**✅ Features**
+✅ Features
 • Metadata Mode
 • Prefix / Suffix
 • Queue System
@@ -70,185 +72,145 @@ async def start(client, message):
 • Bold Captions
 """
 
-    await message.reply_text(
-        text,
-        reply_markup=buttons
-    )
+    await message.reply_text(text, reply_markup=buttons)
 
-# Prefix/Suffix
+
+# =========================
+# PREFIX / SUFFIX
+# =========================
 PREFIX = "@MovieHub"
 SUFFIX = "x265"
 
-# Set Prefix
+
 @app.on_message(filters.command("setprefix"))
 async def setprefix(client, message):
-
     global PREFIX
 
     try:
-
-        PREFIX = message.text.split(
-            None, 1
-        )[1]
-
-        await message.reply_text(
-            f"**✅ Prefix Saved:** `{PREFIX}`"
-        )
+        PREFIX = message.text.split(None, 1)[1]
+        await message.reply_text(f"✅ Prefix Saved: `{PREFIX}`")
 
     except:
+        await message.reply_text("Usage: /setprefix text")
 
-        await message.reply_text(
-            "**Usage:** `/setprefix text`"
-        )
 
-# Set Suffix
 @app.on_message(filters.command("setsuffix"))
 async def setsuffix(client, message):
-
     global SUFFIX
 
     try:
-
-        SUFFIX = message.text.split(
-            None, 1
-        )[1]
-
-        await message.reply_text(
-            f"**✅ Suffix Saved:** `{SUFFIX}`"
-        )
+        SUFFIX = message.text.split(None, 1)[1]
+        await message.reply_text(f"✅ Suffix Saved: `{SUFFIX}`")
 
     except:
+        await message.reply_text("Usage: /setsuffix text")
 
-        await message.reply_text(
-            "**Usage:** `/setsuffix text`"
-        )
 
-# Save Thumbnail
+# =========================
+# THUMBNAIL SAVE
+# =========================
 @app.on_message(filters.photo)
 async def save_thumb(client, message):
 
-    await message.download(
-        file_name="thumbnails/thumb.jpg"
-    )
+    await message.download(file_name="thumbnails/thumb.jpg")
 
-    await message.reply_text(
-        "**✅ Thumbnail Saved Successfully**"
-    )
+    await message.reply_text("✅ Thumbnail Saved Successfully")
 
-# Rename System
+
+# =========================
+# RENAME SYSTEM
+# =========================
 @app.on_message(filters.document)
 async def rename_file(client, message):
 
     file = message.document
-
     old_name = file.file_name
 
-    # Rename Format
-    new_name = (
-        f"{PREFIX} "
-        f"{old_name} "
-        f"{SUFFIX}"
-    )
+    new_name = f"{PREFIX} {old_name} {SUFFIX}"
 
-    # Queue Add
     QUEUE.append(new_name)
 
-    # Download File
-    path = await message.download(
-        file_name=f"downloads/{new_name}"
-    )
+    # download file
+    path = await message.download(file_name=f"downloads/{new_name}")
 
-    # Metadata Output
-    metadata_path = (
-        f"downloads/meta_{new_name}"
-    )
+    metadata_path = f"downloads/meta_{new_name}"
 
-    # FFmpeg Metadata
+    # ffmpeg metadata
     cmd = [
         "ffmpeg",
         "-i", path,
         "-map", "0",
         "-c", "copy",
-        "-metadata",
-        "title=Encoded By Rename Bot",
+        "-metadata", "title=Encoded By Rename Bot",
         metadata_path
     ]
 
     subprocess.run(cmd)
 
-    # Caption
     caption = f"""
-**✅ File Renamed Successfully**
+✅ File Renamed Successfully
 
-**📂 File Name:** `{new_name}`
+📂 File Name: `{new_name}`
 
-**⚡ Features Applied**
+⚡ Features Applied
 • Metadata Added
 • x265 Tag Added
 • Queue Processed
 
-**🤖 Powered By:** @YourBot
+🤖 Powered By: @YourBot
 """
 
     thumb = "thumbnails/thumb.jpg"
 
-    # Upload File
     if os.path.exists(thumb):
-
         await message.reply_document(
             document=metadata_path,
             thumb=thumb,
             caption=caption
         )
-
     else:
-
         await message.reply_document(
             document=metadata_path,
             caption=caption
         )
 
-    # Cleanup
+    # cleanup
     if os.path.exists(path):
         os.remove(path)
 
     if os.path.exists(metadata_path):
         os.remove(metadata_path)
 
-    # Queue Remove
     if new_name in QUEUE:
         QUEUE.remove(new_name)
 
- import asyncio
-from threading import Thread
 
-# Run Telegram Bot
+# =========================
+# RUN BOT IN BACKGROUND THREAD
+# =========================
 def run_bot():
 
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
 
-    print("✅ Telegram Bot Starting")
+    print("🚀 Telegram Bot Starting")
 
     async def start_bot():
         await app.start()
         print("✅ Telegram Bot Started")
-
         await asyncio.Event().wait()
 
     loop.run_until_complete(start_bot())
 
-Thread(
-    target=run_bot,
-    daemon=True
-).start()
 
-# Flask Port
+Thread(target=run_bot, daemon=True).start()
+
+
+# =========================
+# START FLASK (RENDER PORT)
+# =========================
 PORT = int(os.environ.get("PORT", 10000))
 
-print("✅ Flask Running")
+print("🌐 Flask Starting...")
 
-web.run(
-    host="0.0.0.0",
-    port=PORT
-)
+web.run(host="0.0.0.0", port=PORT)        
