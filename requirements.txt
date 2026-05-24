@@ -2,3 +2,7 @@ pyrogram==2.0.106
 tgcrypto==1.2.5
 flask
 gunicorn
+python-dotenv
+motor==3.3.2
+Pillow==10.2.0
+hachoir==3.2.0
