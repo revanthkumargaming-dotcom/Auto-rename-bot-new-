@@ -1,42 +1,37 @@
 import os
+import asyncio
 import subprocess
 from flask import Flask
+from threading import Thread
+
 from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 
 # =========================
-# CONFIG
+# CONFIG (USE ENV IN RENDER)
 # =========================
-API_ID = "20879824"
+API_ID = 20879824
 API_HASH = "5f70a9a12a4bb8cc322bed62bc6007ce"
-BOT_TOKEN = "8849121451:AAEu-1_X1Y-j8jjmt1nyRtuUIvxpavnd-Zk"  
-OWNER_ID = "7340960697"
-
-MONGO_URL = "mongodb+srv://rupamedical:dQv9oKG7QK93BkIh@james.oufkybu.mongodb.net/?appName=james"
-
-
-# =========================
-# FOLDERS
-# =========================
-os.makedirs("downloads", exist_ok=True)
-os.makedirs("thumbnails", exist_ok=True)
+BOT_TOKEN = ("8849121451:AAEu-1_X1Y-j8jjmt1nyRtuUIvxpavnd-Zk")
+OWNER_ID = 7340960697
 
 
 # =========================
 # FLASK APP
 # =========================
-web = Flask(__name__)
+app_web = Flask(__name__)
 
-@web.route("/")
+
+@app_web.route("/")
 def home():
     return "Bot Running Successfully"
 
 
 # =========================
-# BOT CLIENT
+# PYROGRAM BOT
 # =========================
-app = Client(
+bot = Client(
     "renamebot",
     api_id=API_ID,
     api_hash=API_HASH,
@@ -52,7 +47,7 @@ SUFFIX = "x265"
 # =========================
 # START COMMAND
 # =========================
-@app.on_message(filters.command("start"))
+@bot.on_message(filters.command("start"))
 async def start(client, message):
 
     buttons = InlineKeyboardMarkup([
@@ -61,15 +56,15 @@ async def start(client, message):
     ])
 
     await message.reply_text(
-        "🔥 AUTO RENAME BOT IS RUNNING 🔥",
+        "🔥 AUTO RENAME BOT IS LIVE 🔥",
         reply_markup=buttons
     )
 
 
 # =========================
-# PREFIX
+# PREFIX / SUFFIX
 # =========================
-@app.on_message(filters.command("setprefix"))
+@bot.on_message(filters.command("setprefix"))
 async def setprefix(client, message):
     global PREFIX
 
@@ -78,15 +73,12 @@ async def setprefix(client, message):
 
     try:
         PREFIX = message.text.split(None, 1)[1]
-        await message.reply_text(f"✅ Prefix set: {PREFIX}")
+        await message.reply_text(f"✅ Prefix: {PREFIX}")
     except:
         await message.reply_text("Usage: /setprefix text")
 
 
-# =========================
-# SUFFIX
-# =========================
-@app.on_message(filters.command("setsuffix"))
+@bot.on_message(filters.command("setsuffix"))
 async def setsuffix(client, message):
     global SUFFIX
 
@@ -95,7 +87,7 @@ async def setsuffix(client, message):
 
     try:
         SUFFIX = message.text.split(None, 1)[1]
-        await message.reply_text(f"✅ Suffix set: {SUFFIX}")
+        await message.reply_text(f"✅ Suffix: {SUFFIX}")
     except:
         await message.reply_text("Usage: /setsuffix text")
 
@@ -103,8 +95,9 @@ async def setsuffix(client, message):
 # =========================
 # THUMBNAIL
 # =========================
-@app.on_message(filters.photo)
+@bot.on_message(filters.photo)
 async def save_thumb(client, message):
+    os.makedirs("thumbnails", exist_ok=True)
     await message.download(file_name="thumbnails/thumb.jpg")
     await message.reply_text("✅ Thumbnail Saved")
 
@@ -112,17 +105,16 @@ async def save_thumb(client, message):
 # =========================
 # RENAME SYSTEM
 # =========================
-@app.on_message(filters.document)
+@bot.on_message(filters.document)
 async def rename_file(client, message):
 
     file = message.document
     old_name = file.file_name
 
     new_name = f"{PREFIX} {old_name} {SUFFIX}"
-    QUEUE.append(new_name)
 
     path = await message.download(file_name=f"downloads/{new_name}")
-    output_path = f"downloads/encoded_{new_name}"
+    output = f"downloads/encoded_{new_name}"
 
     subprocess.run([
         "ffmpeg",
@@ -130,7 +122,7 @@ async def rename_file(client, message):
         "-map", "0",
         "-c", "copy",
         "-metadata", "title=Encoded By Bot",
-        output_path
+        output
     ])
 
     caption = f"""
@@ -143,53 +135,41 @@ async def rename_file(client, message):
     thumb = "thumbnails/thumb.jpg"
 
     if os.path.exists(thumb):
-        await message.reply_document(output_path, thumb=thumb, caption=caption)
+        await message.reply_document(output, thumb=thumb, caption=caption)
     else:
-        await message.reply_document(output_path, caption=caption)
+        await message.reply_document(output, caption=caption)
 
-    # cleanup
     if os.path.exists(path):
         os.remove(path)
 
-    if os.path.exists(output_path):
-        os.remove(output_path)
-
-    if new_name in QUEUE:
-        QUEUE.remove(new_name)
+    if os.path.exists(output):
+        os.remove(output)
 
 
 # =========================
-# START EVERYTHING CLEANLY
+# RUN BOT
 # =========================
-if __name__ == "__main__":
-
-    print("🚀 Starting Bot...")
-
-    # start bot
-    app.start()
-    print("✅ Bot Started")
-
-    # start flask (Render needs PORT)
-    import asyncio
-from threading import Thread
-
 def run_bot():
     async def start_bot():
         await bot.start()
-        print("🤖 Telegram Bot Running")
-
+        print("🤖 Bot Running")
         await asyncio.Event().wait()
 
     asyncio.run(start_bot())
 
 
+# =========================
+# RUN FLASK
+# =========================
 def run_flask():
     PORT = int(os.environ.get("PORT", 10000))
     print("🌐 Flask Running")
-
     app_web.run(host="0.0.0.0", port=PORT)
 
 
+# =========================
+# MAIN
+# =========================
 if __name__ == "__main__":
     Thread(target=run_bot).start()
-    Thread(target=run_flask).start()     
+    Thread(target=run_flask).start()
