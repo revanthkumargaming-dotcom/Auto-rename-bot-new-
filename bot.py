@@ -8,10 +8,10 @@ from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 # =========================
 # CONFIG
 # =========================
-API_ID = 20879824
+API_ID = "20879824"
 API_HASH = "5f70a9a12a4bb8cc322bed62bc6007ce"
-BOT_TOKEN = "PUT_YOUR_BOT_TOKEN_HERE"  # ⚠️ don't hardcode in public repo
-OWNER_ID = 7340960697
+BOT_TOKEN = "8849121451:AAEu-1_X1Y-j8jjmt1nyRtuUIvxpavnd-Zk"  
+OWNER_ID = "7340960697"
 
 MONGO_URL = "mongodb+srv://rupamedical:dQv9oKG7QK93BkIh@james.oufkybu.mongodb.net/?appName=james"
 
