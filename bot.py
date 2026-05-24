@@ -219,22 +219,24 @@ async def rename_file(client, message):
     if new_name in QUEUE:
         QUEUE.remove(new_name)
 
- # Run Telegram Bot
+ import asyncio
+from threading import Thread
+
+# Run Telegram Bot
 def run_bot():
 
-    import asyncio
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
 
     print("✅ Telegram Bot Starting")
 
-    loop = asyncio.new_event_loop()
+    async def start_bot():
+        await app.start()
+        print("✅ Telegram Bot Started")
 
-    asyncio.set_event_loop(loop)
+        await asyncio.Event().wait()
 
-    app.start()
-
-    print("✅ Telegram Bot Started")
-
-    loop.run_forever()
+    loop.run_until_complete(start_bot())
 
 Thread(
     target=run_bot,
@@ -242,11 +244,8 @@ Thread(
 ).start()
 
 # Flask Port
-PORT = int(
-    os.environ.get("PORT", 10000)
-)
+PORT = int(os.environ.get("PORT", 10000))
 
-print("✅ Bot Started Successfully")
 print("✅ Flask Running")
 
 web.run(
