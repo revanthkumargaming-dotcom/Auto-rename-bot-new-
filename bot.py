@@ -170,5 +170,26 @@ if __name__ == "__main__":
     print("✅ Bot Started")
 
     # start flask (Render needs PORT)
+    import asyncio
+from threading import Thread
+
+def run_bot():
+    async def start_bot():
+        await bot.start()
+        print("🤖 Telegram Bot Running")
+
+        await asyncio.Event().wait()
+
+    asyncio.run(start_bot())
+
+
+def run_flask():
     PORT = int(os.environ.get("PORT", 10000))
-    web.run(host="0.0.0.0", port=PORT)      
+    print("🌐 Flask Running")
+
+    app_web.run(host="0.0.0.0", port=PORT)
+
+
+if __name__ == "__main__":
+    Thread(target=run_bot).start()
+    Thread(target=run_flask).start()     
