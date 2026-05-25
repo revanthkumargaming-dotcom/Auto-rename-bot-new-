@@ -48,8 +48,8 @@ def run_flask():
 
 bot = Client(
     "renamebot",
-    api_id =  "20879824"
-    api_hash =  "5f70a9a12a4bb8cc322bed62bc6007ce"
+    api_id =  "20879824",
+    api_hash =  "5f70a9a12a4bb8cc322bed62bc6007ce",
     bot_token = "8849121451:AAEu-1_X1Y-j8jjmt1nyRtuUIvxpavnd-Zk"
 )
 
