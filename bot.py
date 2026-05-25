@@ -13,11 +13,11 @@ from pyrogram.types import (
 
 # ================= CONFIG =================
 
-API_ID = 20879824
+API_ID = "20879824"
 API_HASH = "5f70a9a12a4bb8cc322bed62bc6007ce"
 BOT_TOKEN = "8849121451:AAEu-1_X1Y-j8jjmt1nyRtuUIvxpavnd-Zk"
 
-OWNER_ID = 7340960697
+OWNER_ID = "7340960697"
 
 PREFIX = "MovieHub"
 SUFFIX = "x265"
