@@ -48,9 +48,9 @@ def run_flask():
 
 bot = Client(
     "renamebot",
-    api_id=API_ID,
-    api_hash=API_HASH,
-    bot_token=BOT_TOKEN
+    api_id =  "20879824"
+    api_hash =  "5f70a9a12a4bb8cc322bed62bc6007ce"
+    bot_token = "8849121451:AAEu-1_X1Y-j8jjmt1nyRtuUIvxpavnd-Zk"
 )
 
 QUEUE = []
