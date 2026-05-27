@@ -1,263 +1,170 @@
-import os
-import asyncio
-import threading
-import subprocess
+# ================= IMPORTS =================
 
-from flask import Flask
+import os
+import time
+import asyncio
 
 from pyrogram import Client, filters, idle
-from pyrogram.types import (
-    InlineKeyboardMarkup,
-    InlineKeyboardButton
+from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+
+from config import API_ID, API_HASH, BOT_TOKEN
+from keep_alive import keep_alive
+
+# ================= BOT CLIENT =================
+
+bot = Client(
+    "RenameBot",
+    api_id=API_ID,
+    api_hash=API_HASH,
+    bot_token=BOT_TOKEN
 )
-
-# ================= CONFIG =================
-
-API_ID = "20879824"
-API_HASH = "5f70a9a12a4bb8cc322bed62bc6007ce"
-BOT_TOKEN = "8849121451:AAEu-1_X1Y-j8jjmt1nyRtuUIvxpavnd-Zk"
-
-OWNER_ID = "7340960697"
-
-PREFIX = "MovieHub"
-SUFFIX = "x265"
 
 # ================= CREATE FOLDERS =================
 
 os.makedirs("downloads", exist_ok=True)
 os.makedirs("thumbnails", exist_ok=True)
 
-# ================= FLASK =================
+# ================= PROGRESS FUNCTION =================
 
-web = Flask(__name__)
+async def progress(current, total, message, start_time, action):
 
-@web.route("/")
-def home():
-    return "🔥 Auto Rename Bot Running Successfully"
+    now = time.time()
+    diff = now - start_time
 
-def run_flask():
+    if diff == 0:
+        return
 
-    port = int(os.environ.get("PORT", 10000))
+    if round(diff % 10) == 0 or current == total:
 
-    web.run(
-        host="0.0.0.0",
-        port=port
-    )
+        percentage = current * 100 / total
+        speed = current / diff
+        speed_mb = speed / (1024 * 1024)
 
-# ================= TELEGRAM BOT =================
+        text = (
+            f"🚀 {action}\n\n"
+            f"📊 Progress : {percentage:.1f}%\n"
+            f"⚡ Speed : {speed_mb:.2f} MB/s"
+        )
 
-bot = Client(
-    "renamebot",
-    api_id =  "20879824",
-    api_hash =  "5f70a9a12a4bb8cc322bed62bc6007ce",
-    bot_token = "8849121451:AAEu-1_X1Y-j8jjmt1nyRtuUIvxpavnd-Zk"
-)
+        try:
+            await message.edit_text(text)
+        except:
+            pass
 
-QUEUE = []
-
-# ================= START =================
+# ================= START COMMAND =================
 
 @bot.on_message(filters.command("start"))
-async def start_handler(client, message):
+async def start_command(client, message):
 
-    buttons = InlineKeyboardMarkup([
+    buttons = InlineKeyboardMarkup(
         [
-            InlineKeyboardButton(
-                "📢 Updates",
-                url="https://t.me/yourchannel"
-            )
+            [
+                InlineKeyboardButton(
+                    "📢 Channel",
+                    url="https://t.me/yourchannel"
+                )
+            ]
         ]
-    ])
+    )
 
-    text = f"""
-🔥 AUTO RENAME BOT
-
-✅ Bot Status : Active
-✅ Prefix : `{PREFIX}`
-✅ Suffix : `{SUFFIX}`
-
-📂 Send Any File To Rename
-"""
+    text = (
+        "👋 Hello!\n\n"
+        "📂 File pampu.\n"
+        "✨ Nenu automatic ga rename chestanu."
+    )
 
     await message.reply_text(
-        text,
+        text=text,
         reply_markup=buttons
     )
 
-# ================= HELP =================
+# ================= RENAME HANDLER =================
 
-@bot.on_message(filters.command("help"))
-async def help_handler(client, message):
-
-    text = """
-📌 COMMANDS
-
-/setprefix text
-→ Set Prefix
-
-/setsuffix text
-→ Set Suffix
-
-📂 Send Photo
-→ Save Thumbnail
-
-📂 Send File
-→ Auto Rename
-"""
-
-    await message.reply_text(text)
-
-# ================= SET PREFIX =================
-
-@bot.on_message(filters.command("setprefix"))
-async def setprefix_handler(client, message):
-
-    global PREFIX
-
-    try:
-
-        PREFIX = message.text.split(None, 1)[1]
-
-        await message.reply_text(
-            f"✅ Prefix Saved\n\n`{PREFIX}`"
-        )
-
-    except:
-
-        await message.reply_text(
-            "❌ Usage:\n/setprefix MovieHub"
-        )
-
-# ================= SET SUFFIX =================
-
-@bot.on_message(filters.command("setsuffix"))
-async def setsuffix_handler(client, message):
-
-    global SUFFIX
-
-    try:
-
-        SUFFIX = message.text.split(None, 1)[1]
-
-        await message.reply_text(
-            f"✅ Suffix Saved\n\n`{SUFFIX}`"
-        )
-
-    except:
-
-        await message.reply_text(
-            "❌ Usage:\n/setsuffix x265"
-        )
-
-# ================= SAVE THUMBNAIL =================
-
-@bot.on_message(filters.photo)
-async def thumbnail_handler(client, message):
-
-    await message.download(
-        file_name="thumbnails/thumb.jpg"
-    )
-
-    await message.reply_text(
-        "✅ Thumbnail Saved Successfully"
-    )
-
-# ================= RENAME SYSTEM =================
-
-@bot.on_message(filters.document)
+@bot.on_message(filters.document | filters.video)
 async def rename_handler(client, message):
 
-    file = message.document
+    file = message.document or message.video
+
+    # ================= FILE SIZE CHECK =================
+
+    if file.file_size > 2 * 1024 * 1024 * 1024:
+
+        await message.reply_text(
+            "❌ 2GB kante pedda file upload cheyyalem!"
+        )
+        return
+
+    # ================= FILE NAMES =================
 
     old_name = file.file_name
+    new_name = f"Renamed_{old_name}"
 
-    safe_name = old_name.replace("/", "_")
+    # ================= DOWNLOAD =================
 
-    new_name = f"{PREFIX} {safe_name} {SUFFIX}"
-
-    QUEUE.append(new_name)
-
-    wait_msg = await message.reply_text(
-        "⏳ Downloading File..."
-    )
-
-    # Download
+    status = await message.reply_text("⏳ Downloading...")
+    start_time = time.time()
 
     download_path = await message.download(
-        file_name=f"downloads/{safe_name}"
+        file_name=f"downloads/{old_name}",
+        progress=progress,
+        progress_args=(status, start_time, "Downloading")
     )
+
+    # ================= PROCESS =================
+
+    await status.edit_text("⚡ Processing...")
 
     output_path = f"downloads/{new_name}"
 
-    await wait_msg.edit_text(
-        "⚡ Adding Metadata..."
-    )
-
-    # FFmpeg Metadata
-
     cmd = [
         "ffmpeg",
+        "-y",
         "-i", download_path,
         "-map", "0",
         "-c", "copy",
         "-metadata", f"title={new_name}",
-        output_path,
-        "-y"
+        output_path
     ]
 
-    subprocess.run(
-        cmd,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL
+    process = await asyncio.create_subprocess_exec(
+        *cmd,
+        stdout=asyncio.subprocess.DEVNULL,
+        stderr=asyncio.subprocess.DEVNULL
     )
 
-    await wait_msg.edit_text(
-        "📤 Uploading File..."
+    await process.wait()
+
+    # ================= UPLOAD =================
+
+    await status.edit_text("📤 Uploading...")
+
+    caption = (
+        f"✅ **File Renamed Successfully**\n\n"
+        f"📄 **File Name :** `{new_name}`\n"
+        f"🤖 **Bot :** RenameBot"
     )
 
-    caption = f"""
-🔥 FILE RENAMED SUCCESSFULLY
-
-📂 File Name :
-`{new_name}`
-
-⚡ Features Applied
-• Metadata Added
-• Prefix Added
-• Suffix Added
-• Queue Processed
-
-🤖 Powered By Auto Rename Bot
-"""
-
-    thumb = "thumbnails/thumb.jpg"
+    thumb = f"thumbnails/{message.from_user.id}.jpg"
 
     try:
 
-        if os.path.exists(thumb):
-
-            await message.reply_document(
-                document=output_path,
-                thumb=thumb,
-                caption=caption
-            )
-
-        else:
-
-            await message.reply_document(
-                document=output_path,
-                caption=caption
-            )
-
-    except Exception as e:
-
-        await message.reply_text(
-            f"❌ Upload Error\n\n{e}"
+        await message.reply_document(
+            document=output_path,
+            thumb=thumb if os.path.exists(thumb) else None,
+            caption=caption,
+            progress=progress,
+            progress_args=(status, start_time, "Uploading")
         )
 
-    # Cleanup
+        await status.delete()
 
-    try:
+    except Exception as error:
+
+        await message.reply_text(
+            f"❌ Error:\n`{error}`"
+        )
+
+    finally:
 
         if os.path.exists(download_path):
             os.remove(download_path)
@@ -265,31 +172,11 @@ async def rename_handler(client, message):
         if os.path.exists(output_path):
             os.remove(output_path)
 
-    except:
-        pass
-
-    if new_name in QUEUE:
-        QUEUE.remove(new_name)
-
-    await wait_msg.delete()
-
-# ================= OWNER ONLY =================
-
-@bot.on_message(filters.command("queue"))
-async def queue_handler(client, message):
-
-    if message.from_user.id != OWNER_ID:
-        return
-
-    text = f"📂 Queue Files : {len(QUEUE)}"
-
-    await message.reply_text(text)
-
-# ================= MAIN =================
+# ================= MAIN FUNCTION =================
 
 async def main():
 
-    print("🚀 Starting Bot...")
+    keep_alive()
 
     await bot.start()
 
@@ -299,13 +186,7 @@ async def main():
 
     await bot.stop()
 
-# ================= RUN =================
+# ================= RUN BOT =================
 
 if __name__ == "__main__":
-
-    threading.Thread(
-        target=run_flask,
-        daemon=True
-    ).start()
-
     asyncio.run(main())
