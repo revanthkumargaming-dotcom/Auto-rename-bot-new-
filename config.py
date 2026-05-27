@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-API_ID = 20879824"
+API_ID = "20879824"
 API_HASH = "5f70a9a12a4bb8cc322bed62bc6007ce"
 BOT_TOKEN = "8849121451:AAHFQy17HNoFwaTZDeVNVYvv7W7y9rGngYg"
 
