@@ -1,19 +1,30 @@
 import os
 import time
+from threading import Thread
+from flask import Flask
+
 from pyrogram import Client, filters
 from pyrogram.types import (
     InlineKeyboardMarkup,
     InlineKeyboardButton
 )
-from dotenv import load_dotenv
-
-load_dotenv()
-
-# ================= IMPORT CONFIG =================
 
 from config import *
 
-# ================================================
+# ================= FLASK SERVER =================
+
+app = Flask(__name__)
+
+@app.route("/")
+def home():
+    return "Bot Is Running Successfully ✅"
+
+def run_web():
+    app.run(host="0.0.0.0", port=8080)
+
+Thread(target=run_web).start()
+
+# ================= BOT =================
 
 bot = Client(
     "AutoRenameBot",
@@ -44,24 +55,6 @@ async def start(client, message):
         ]
     )
 
-    try:
-        member = await bot.get_chat_member(
-            FORCE_SUB_CHANNEL,
-            message.from_user.id
-        )
-
-        if member.status in ["left", "kicked"]:
-            return await message.reply_text(
-                "**⚠️ First Join Our Channel To Use Bot**",
-                reply_markup=buttons
-            )
-
-    except:
-        return await message.reply_text(
-            "**⚠️ Join Channel First**",
-            reply_markup=buttons
-        )
-
     txt = f"""
 **🤖 {BOT_NAME} Started Successfully**
 
@@ -79,7 +72,10 @@ async def start(client, message):
 `/help` - Help Menu
 """
 
-    await message.reply_text(txt)
+    await message.reply_text(
+        txt,
+        reply_markup=buttons
+    )
 
 # ================= HELP =================
 
@@ -103,7 +99,7 @@ async def set_caption(client, message):
 
     if len(message.command) < 2:
         return await message.reply_text(
-            "**Usage:**\n`/setcaption Your Caption`"
+            "**Usage:** `/setcaption Your Caption`"
         )
 
     caption = message.text.split(None, 1)[1]
@@ -164,28 +160,25 @@ async def sequence_cmd(client, message):
 
     if len(message.command) < 2:
         return await message.reply_text(
-            "**Usage:**\n`/sequence on` or `/sequence off`"
+            "**Usage:** `/sequence on` or `/sequence off`"
         )
 
     option = message.command[1].lower()
 
     if option == "on":
+
         user_sequence[message.from_user.id] = True
 
-        return await message.reply_text(
+        await message.reply_text(
             "**✅ Sequence Enabled**"
         )
 
     elif option == "off":
+
         user_sequence[message.from_user.id] = False
 
-        return await message.reply_text(
+        await message.reply_text(
             "**❌ Sequence Disabled**"
-        )
-
-    else:
-        return await message.reply_text(
-            "**Invalid Option ❌**"
         )
 
 # ================= STATS =================
@@ -193,10 +186,10 @@ async def sequence_cmd(client, message):
 @bot.on_message(filters.command("stats") & filters.user(ADMIN))
 async def stats(client, message):
 
-    users = len(user_caption)
+    total_users = len(user_caption)
 
     await message.reply_text(
-        f"**📊 Total Users :** `{users}`"
+        f"**📊 Total Users :** `{total_users}`"
     )
 
 # ================= BROADCAST =================
@@ -206,7 +199,7 @@ async def broadcast(client, message):
 
     if len(message.command) < 2:
         return await message.reply_text(
-            "**Usage:**\n`/broadcast message`"
+            "**Usage:** `/broadcast your message`"
         )
 
     text = message.text.split(None, 1)[1]
