@@ -13,3 +13,4 @@ MONGO_URL = os.getenv(
 )
 
 LOG_CHANNEL = int(os.getenv("LOG_CHANNEL", "0"))
+ADMIN = 7340960697
