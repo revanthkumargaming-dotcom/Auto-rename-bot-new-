@@ -38,37 +38,102 @@ bot = Client(
 
 user_caption = {}
 user_thumbnail = {}
-user_sequence_number = {}
 user_autorename = {}
 user_prefix = {}
 user_suffix = {}
 user_metadata = {}
+user_font = {}
+
+sequence_mode = {}
+sequence_files = {}
+
+# ================= PROGRESS BAR =================
+
+async def progress_bar(
+    current,
+    total,
+    message,
+    start,
+    text
+):
+
+    now = time.time()
+
+    diff = now - start
+
+    if diff == 0:
+        return
+
+    percentage = current * 100 / total
+
+    speed = current / diff
+
+    remaining_time = round(
+        (total - current) / speed
+    ) if speed > 0 else 0
+
+    bar_length = 20
+
+    filled_length = int(
+        bar_length * current // total
+    )
+
+    bar = "█" * filled_length + "░" * (
+        bar_length - filled_length
+    )
+
+    uploaded = current / 1024 / 1024
+    total_size = total / 1024 / 1024
+    speed_mb = speed / 1024 / 1024
+
+    txt = f"""
+{text}
+
+[{bar}]
+
+**📊 Progress :** `{percentage:.1f}%`
+**⚡ Speed :** `{speed_mb:.2f} MB/s`
+**📥 Done :** `{uploaded:.2f} MB`
+**🗂 Total :** `{total_size:.2f} MB`
+**⏳ ETA :** `{remaining_time} sec`
+"""
+
+    try:
+        await message.edit(txt)
+
+    except:
+        pass
 
 # ================= START =================
 
 @bot.on_message(filters.command("start"))
 async def start(client, message):
 
-    txt = f"""
-**🤖 Auto Rename Bot Started Successfully**
+    txt = """
+**🤖 AUTO RENAME BOT**
 
 **Available Commands**
 
-`/prefix` - Set Prefix
-`/suffix` - Set Suffix
+`/prefix`
+`/suffix`
 
-`/autorename` - Setup Auto Rename
-`/sequence` - Start Sequence
+`/autorename`
 
-`/setcaption` - Set Caption
-`/delcaption` - Delete Caption
+`/sequence`
+`/endsequence`
 
-`/setthumb` - Set Thumbnail
-`/delthumb` - Delete Thumbnail
+`/customfont`
+`/font`
 
-`/metadata` - Set Metadata
+`/setcaption`
+`/delcaption`
 
-`/help` - Help Menu
+`/setthumb`
+`/delthumb`
+
+`/metadata`
+
+`/help`
 """
 
     buttons = InlineKeyboardMarkup(
@@ -100,17 +165,22 @@ async def help_cmd(client, message):
 2️⃣ Bot Renames Automatically  
 3️⃣ Get Renamed File ✅
 
-**📌 SEQUENCE**
-`/sequence 157`
-
 **📌 PREFIX**
-`/prefix @Team_AC`
+`/prefix @Buster_ofcl`
 
 **📌 SUFFIX**
 `/suffix WEKakashi`
 
 **📌 AUTORENAME**
-`/autorename [S{season} - E{episode}] {quality} Naruto`
+`/autorename [S{season} - E{episode}] {quality}`
+
+**📌 SEQUENCE**
+`/sequence`
+Send Files
+`/endsequence`
+
+**📌 CUSTOM FONT**
+`/customfont`
 """
     )
 
@@ -121,7 +191,7 @@ async def set_prefix(client, message):
 
     if len(message.command) < 2:
         return await message.reply_text(
-            "**Usage:** `/prefix YourPrefix`"
+            "**Usage:** `/prefix text`"
         )
 
     text = message.text.split(None, 1)[1]
@@ -139,7 +209,7 @@ async def set_suffix(client, message):
 
     if len(message.command) < 2:
         return await message.reply_text(
-            "**Usage:** `/suffix YourSuffix`"
+            "**Usage:** `/suffix text`"
         )
 
     text = message.text.split(None, 1)[1]
@@ -149,34 +219,6 @@ async def set_suffix(client, message):
     await message.reply_text(
         f"**✅ Suffix Saved**\n`{text}`"
     )
-
-# ================= SEQUENCE =================
-
-@bot.on_message(filters.command("sequence"))
-async def sequence_cmd(client, message):
-
-    if len(message.command) < 2:
-        return await message.reply_text(
-            "**Usage:** `/sequence 157`"
-        )
-
-    try:
-
-        start_number = int(message.command[1])
-
-        user_sequence_number[
-            message.from_user.id
-        ] = start_number
-
-        await message.reply_text(
-            f"**✅ Sequence Started From:** `{start_number}`"
-        )
-
-    except:
-
-        await message.reply_text(
-            "**❌ Invalid Number**"
-        )
 
 # ================= AUTORENAME =================
 
@@ -194,8 +236,6 @@ async def auto_rename(client, message):
 f"""
 **SETUP AUTO RENAME FORMAT**
 
-Use These Keywords:
-
 ✓ `{{season}}`
 ✓ `{{episode}}`
 ✓ `{{quality}}`
@@ -212,14 +252,63 @@ Use These Keywords:
 """
         )
 
-    format_text = message.text.split(None, 1)[1]
+    format_text = message.text.split(
+        None,
+        1
+    )[1]
 
     user_autorename[
         message.from_user.id
     ] = format_text
 
     await message.reply_text(
-        f"**✅ Auto Rename Format Saved**\n\n`{format_text}`"
+        "**✅ Auto Rename Format Saved**"
+    )
+
+# ================= CUSTOM FONT =================
+
+@bot.on_message(filters.command("customfont"))
+async def custom_font(client, message):
+
+    txt = """
+**🎨 Select Font**
+
+`/font bold`
+`/font italic`
+`/font mono`
+`/font normal`
+"""
+
+    await message.reply_text(txt)
+
+@bot.on_message(filters.command("font"))
+async def set_font(client, message):
+
+    if len(message.command) < 2:
+        return await message.reply_text(
+            "**Usage:** `/font bold`"
+        )
+
+    font = message.command[1].lower()
+
+    fonts = [
+        "bold",
+        "italic",
+        "mono",
+        "normal"
+    ]
+
+    if font not in fonts:
+        return await message.reply_text(
+            "**❌ Invalid Font**"
+        )
+
+    user_font[
+        message.from_user.id
+    ] = font
+
+    await message.reply_text(
+        f"**✅ Font Changed To:** `{font}`"
     )
 
 # ================= CAPTION =================
@@ -229,10 +318,13 @@ async def set_caption(client, message):
 
     if len(message.command) < 2:
         return await message.reply_text(
-            "**Usage:** `/setcaption Your Caption`"
+            "**Usage:** `/setcaption text`"
         )
 
-    caption = message.text.split(None, 1)[1]
+    caption = message.text.split(
+        None,
+        1
+    )[1]
 
     user_caption[
         message.from_user.id
@@ -254,7 +346,7 @@ async def del_caption(client, message):
         "**🗑 Caption Deleted**"
     )
 
-# ================= THUMBNAIL =================
+# ================= THUMB =================
 
 @bot.on_message(filters.command("setthumb"))
 async def set_thumb(client, message):
@@ -301,25 +393,14 @@ async def del_thumb(client, message):
 async def metadata_cmd(client, message):
 
     if len(message.command) < 2:
-
-        current = user_metadata.get(
-            message.from_user.id,
-            "Not Set"
-        )
-
         return await message.reply_text(
-f"""
-**📀 Metadata Setup**
-
-Usage:
-`/metadata Team AC Encodes`
-
-Current Metadata:
-`{current}`
-"""
+            "**Usage:** `/metadata text`"
         )
 
-    text = message.text.split(None, 1)[1]
+    text = message.text.split(
+        None,
+        1
+    )[1]
 
     user_metadata[
         message.from_user.id
@@ -329,10 +410,92 @@ Current Metadata:
         f"**✅ Metadata Saved**\n`{text}`"
     )
 
-# ================= AUTO RENAME =================
+# ================= SEQUENCE START =================
 
-@bot.on_message(filters.document | filters.video | filters.audio)
-async def rename_file(client, message):
+@bot.on_message(filters.command("sequence"))
+async def start_sequence(client, message):
+
+    sequence_mode[
+        message.from_user.id
+    ] = True
+
+    sequence_files[
+        message.from_user.id
+    ] = []
+
+    await message.reply_text(
+        "**✅ Sequence Mode Started\n\nSend Files Now**"
+    )
+
+# ================= END SEQUENCE =================
+
+@bot.on_message(filters.command("endsequence"))
+async def end_sequence(client, message):
+
+    user_id = message.from_user.id
+
+    files = sequence_files.get(
+        user_id,
+        []
+    )
+
+    if not files:
+        return await message.reply_text(
+            "**❌ No Files Found**"
+        )
+
+    def extract_number(file_name):
+
+        match = re.search(
+            r'(?:E|EP|Episode)\s?(\d+)',
+            file_name,
+            re.I
+        )
+
+        if match:
+            return int(match.group(1))
+
+        nums = re.findall(r'\d+', file_name)
+
+        if nums:
+            return int(nums[0])
+
+        return 0
+
+    files.sort(
+        key=lambda x: extract_number(
+            (
+                x.document.file_name
+                if x.document else
+                x.video.file_name
+            )
+        )
+    )
+
+    await message.reply_text(
+        f"**📤 Uploading {len(files)} Files In Order...**"
+    )
+
+    for msg_data in files:
+
+        await process_file(
+            msg_data,
+            message
+        )
+
+    sequence_mode[user_id] = False
+    sequence_files[user_id] = []
+
+    await message.reply_text(
+        "**✅ Sequence Completed**"
+    )
+
+# ================= PROCESS FILE =================
+
+async def process_file(
+    message,
+    reply_message
+):
 
     file = (
         message.document
@@ -342,11 +505,10 @@ async def rename_file(client, message):
 
     old_name = file.file_name
 
-    # ===== TITLE =====
-
-    title = old_name.replace(".", " ")
-
-    # ===== DETECT =====
+    title = old_name.replace(
+        ".",
+        " "
+    )
 
     season = "01"
     episode = "01"
@@ -355,9 +517,23 @@ async def rename_file(client, message):
     volume = "01"
     chapter = "01"
 
-    season_match = re.search(r"S(\d+)", old_name, re.I)
-    episode_match = re.search(r"E(\d+)", old_name, re.I)
-    quality_match = re.search(r"(\d{3,4}p)", old_name, re.I)
+    season_match = re.search(
+        r"S(\d+)",
+        old_name,
+        re.I
+    )
+
+    episode_match = re.search(
+        r"E(\d+)",
+        old_name,
+        re.I
+    )
+
+    quality_match = re.search(
+        r"(\d{3,4}p)",
+        old_name,
+        re.I
+    )
 
     if season_match:
         season = season_match.group(1)
@@ -367,8 +543,6 @@ async def rename_file(client, message):
 
     if quality_match:
         quality = quality_match.group(1)
-
-    # ===== AUTORENAME =====
 
     rename_format = user_autorename.get(
         message.from_user.id
@@ -389,8 +563,6 @@ async def rename_file(client, message):
 
         new_name = old_name
 
-    # ===== PREFIX =====
-
     prefix = user_prefix.get(
         message.from_user.id,
         ""
@@ -403,76 +575,111 @@ async def rename_file(client, message):
 
     new_name = f"{prefix} {new_name} {suffix}".strip()
 
-    # ===== SEQUENCE =====
-
-    current_number = user_sequence_number.get(
-        message.from_user.id
-    )
-
-    if current_number is not None:
-
-        new_name = f"[{current_number}] {new_name}"
-
-        user_sequence_number[
-            message.from_user.id
-        ] += 1
-
-    # ===== EXTENSION =====
-
-    ext = os.path.splitext(old_name)[1]
+    ext = os.path.splitext(
+        old_name
+    )[1]
 
     if not new_name.endswith(ext):
         new_name += ext
 
-    # ===== DOWNLOAD =====
-
-    msg = await message.reply_text(
-        "**⬇️ Downloading File...**"
+    font = user_font.get(
+        message.from_user.id,
+        "mono"
     )
+
+    custom_caption = user_caption.get(
+        message.from_user.id
+    )
+
+    if custom_caption:
+
+        final_caption = custom_caption
+
+    else:
+
+        if font == "bold":
+            final_caption = f"**{new_name}**"
+
+        elif font == "italic":
+            final_caption = f"__{new_name}__"
+
+        elif font == "mono":
+            final_caption = f"`{new_name}`"
+
+        else:
+            final_caption = new_name
+
+    msg = await reply_message.reply_text(
+        "**🚀 Starting Process...**"
+    )
+
+    start_time = time.time()
 
     downloaded = await message.download(
-        file_name=new_name
+        file_name=new_name,
+        progress=progress_bar,
+        progress_args=(
+            msg,
+            start_time,
+            "⬇️ Downloading..."
+        )
     )
-
-    await msg.edit(
-        "**⬆️ Uploading File...**"
-    )
-
-    # ===== CAPTION =====
-
-    caption = user_caption.get(
-        message.from_user.id,
-        f"**✅ Renamed Successfully**\n\n`{new_name}`"
-    )
-
-    # ===== THUMB =====
 
     thumb = user_thumbnail.get(
         message.from_user.id
     )
 
-    # ===== METADATA =====
+    start_time = time.time()
 
-    metadata_text = user_metadata.get(
-        message.from_user.id,
-        "Auto Rename Bot"
-    )
-
-    # ===== UPLOAD =====
-
-    await message.reply_document(
+    await reply_message.reply_document(
         document=downloaded,
-        caption=caption,
+        caption=final_caption,
         thumb=thumb,
-        file_name=new_name
+        file_name=new_name,
+        progress=progress_bar,
+        progress_args=(
+            msg,
+            start_time,
+            "⬆️ Uploading..."
+        )
     )
 
     await msg.delete()
 
-    # ===== DELETE LOCAL FILE =====
-
     if os.path.exists(downloaded):
         os.remove(downloaded)
+
+# ================= MAIN HANDLER =================
+
+@bot.on_message(
+    filters.document
+    | filters.video
+    | filters.audio
+)
+async def rename_file(client, message):
+
+    if sequence_mode.get(
+        message.from_user.id
+    ):
+
+        sequence_files[
+            message.from_user.id
+        ].append(message)
+
+        file = (
+            message.document
+            or message.video
+            or message.audio
+        )
+
+        return await message.reply_text(
+            f"**📥 Added To Sequence Queue**\n\n`{file.file_name}`"
+        )
+
+    await process_file(
+        message,
+        message
+    )
 
 # ================= RUN =================
 
