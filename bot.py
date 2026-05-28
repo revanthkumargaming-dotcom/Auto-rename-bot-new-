@@ -58,14 +58,12 @@ async def progress_bar(
 ):
 
     now = time.time()
-
     diff = now - start
 
     if diff == 0:
         return
 
     percentage = current * 100 / total
-
     speed = current / diff
 
     remaining_time = round(
@@ -100,7 +98,6 @@ async def progress_bar(
 
     try:
         await message.edit(txt)
-
     except:
         pass
 
@@ -434,27 +431,32 @@ async def end_sequence(client, message):
 
     user_id = message.from_user.id
 
-    files = sequence_files.get(user_id, [])
-
-    if not files:
+    if user_id not in sequence_files:
         return await message.reply_text(
-            "**❌ No Files Found**"
+            "**❌ Sequence Not Started**"
         )
 
-    # ===== SORT FILES =====
+    files = sequence_files[user_id]
 
-    def extract_number(file_name):
+    if len(files) == 0:
+        return await message.reply_text(
+            "**❌ No Files Added**"
+        )
+
+    # ===== SORT =====
+
+    def extract_number(name):
 
         match = re.search(
-            r'(?:E|EP|Episode)\s?(\d+)',
-            file_name,
-            re.I
+            r'(?:E|EP|Episode)[ ._-]*(\d+)',
+            name,
+            re.IGNORECASE
         )
 
         if match:
             return int(match.group(1))
 
-        nums = re.findall(r'\d+', file_name)
+        nums = re.findall(r'\d+', name)
 
         if nums:
             return int(nums[0])
@@ -462,31 +464,23 @@ async def end_sequence(client, message):
         return 0
 
     files.sort(
-        key=lambda x: extract_number(
+        key=lambda msg: extract_number(
             (
-                x.document.file_name
-                if x.document
-                else x.video.file_name
+                msg.document.file_name
+                if msg.document
+                else msg.video.file_name
             )
         )
     )
 
-    await message.reply_text(
-        f"**📂 Sending {len(files)} Files In Correct Order...**"
-    )
-
-    # ===== RESEND =====
+    # ===== SEND =====
 
     for msg_data in files:
 
-        file = (
-            msg_data.document
-            or msg_data.video
-            or msg_data.audio
-        )
-
-        await message.reply_cached_media(
-            file.file_id
+        await bot.copy_message(
+            chat_id=message.chat.id,
+            from_chat_id=msg_data.chat.id,
+            message_id=msg_data.id
         )
 
     # ===== RESET =====
@@ -495,7 +489,7 @@ async def end_sequence(client, message):
     sequence_files[user_id] = []
 
     await message.reply_text(
-        "**✅ Sequence Completed**"
+        "**✅ Done**"
     )
 
 # ================= PROCESS FILE =================
@@ -674,14 +668,8 @@ async def rename_file(client, message):
             message.from_user.id
         ].append(message)
 
-        file = (
-            message.document
-            or message.video
-            or message.audio
-        )
-
         return await message.reply_text(
-            f"**📥 Added To Sequence Queue**\n\n`{file.file_name}`"
+            "**📥 File Added To Queue**"
         )
 
     await process_file(
