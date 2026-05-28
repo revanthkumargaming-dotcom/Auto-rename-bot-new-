@@ -6,6 +6,9 @@ from flask import Flask
 from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
+# ================= CONFIG IMPORT =================
+from config import API_ID, API_HASH, BOT_TOKEN, START_PIC
+
 # ================= FLASK =================
 
 flask_app = Flask(__name__)
@@ -18,13 +21,6 @@ def run_web():
     flask_app.run(host="0.0.0.0", port=8080)
 
 Thread(target=run_web).start()
-
-# ================= CONFIG =================
-
-API_ID = int(os.getenv("API_ID", "123456"))
-API_HASH = os.getenv("API_HASH", "")
-BOT_TOKEN = os.getenv("BOT_TOKEN", "")
-START_PIC = os.getenv("START_PIC")
 
 # ================= BOT =================
 
@@ -39,7 +35,6 @@ bot = Client(
 
 user_prefix = {}
 user_suffix = {}
-user_autorename = {}
 user_font = {}
 sequence_mode = {}
 sequence_files = {}
@@ -53,7 +48,7 @@ async def start(client, message):
 🤖 AUTO RENAME BOT
 
 📁 Send file → rename → return
-⚡ Fast & Clean Bot
+⚡ Fast & Clean
 """
 
     btn = InlineKeyboardMarkup(
@@ -74,7 +69,6 @@ async def help_cmd(client, message):
 
 /prefix text
 /suffix text
-/autorename format
 /font bold|italic|mono|normal
 /sequence
 /endsequence
@@ -105,58 +99,18 @@ async def suffix(client, message):
 # ================= FONT =================
 
 @bot.on_message(filters.command("font"))
-async def set_font(client, message):
+async def font(client, message):
 
     if len(message.command) < 2:
         return await message.reply_text("Usage: /font mono")
 
-    font = message.command[1].lower()
+    f = message.command[1].lower()
 
-    if font not in ["bold", "italic", "mono", "normal"]:
+    if f not in ["bold", "italic", "mono", "normal"]:
         return await message.reply_text("❌ Invalid Font")
 
-    user_font[message.from_user.id] = font
-    await message.reply_text(f"✅ Font set to {font}")
-
-# ================= AUTORENAME =================
-
-@bot.on_message(filters.command("autorename"))
-async def autorename(client, message):
-
-    if len(message.command) < 2:
-        return await message.reply_text("Usage: /autorename format")
-
-    user_autorename[message.from_user.id] = message.text.split(None, 1)[1]
-    await message.reply_text("✅ AutoRename Saved")
-
-# ================= SEQUENCE START =================
-
-@bot.on_message(filters.command("sequence"))
-async def start_sequence(client, message):
-
-    sequence_mode[message.from_user.id] = True
-    sequence_files[message.from_user.id] = []
-
-    await message.reply_text("📥 Sequence Started")
-
-# ================= END SEQUENCE =================
-
-@bot.on_message(filters.command("endsequence"))
-async def end_sequence(client, message):
-
-    user_id = message.from_user.id
-    files = sequence_files.get(user_id, [])
-
-    if not files:
-        return await message.reply_text("❌ No files")
-
-    for msg in files:
-        await bot.copy_message(message.chat.id, msg.chat.id, msg.id)
-
-    sequence_mode[user_id] = False
-    sequence_files[user_id] = []
-
-    await message.reply_text("✅ Done")
+    user_font[message.from_user.id] = f
+    await message.reply_text(f"✅ Font set to {f}")
 
 # ================= FILE HANDLER =================
 
@@ -167,7 +121,7 @@ async def rename_file(client, message):
 
     if sequence_mode.get(user_id):
         sequence_files[user_id].append(message)
-        return await message.reply_text("📥 Added")
+        return await message.reply_text("📥 Added to sequence")
 
     file = await message.download()
     base = os.path.basename(file)
