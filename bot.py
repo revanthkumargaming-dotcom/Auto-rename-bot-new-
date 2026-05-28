@@ -89,7 +89,7 @@ async def progress_bar(current, total, message, start, text):
 
 # ================= START (FIXED DUPLICATE ISSUE REMOVED) =================
 
-START_PIC = os.getenv("START_PIC")
+START_PIC = os.getenv("START_PIC", "https://ibb.co/N6sFQf4j" )
 
 @bot.on_message(filters.command("start"))
 async def start(client, message):
