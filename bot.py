@@ -101,21 +101,30 @@ async def progress_bar(
         pass
 
 # ================= START =================
-@bot.on_message(filters.command("start"))
+from pyrogram import Client, filters
+from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+import os
+
+START_PIC = os.getenv("START_PIC")
+
+
+@Client.on_message(filters.command("start"))
 async def start(client, message):
 
-    # 🔥 DEBUG PRINT (Render logs lo check cheyyadaniki)
-    print("START_PIC =", START_PIC)
+    # 🔥 Render logs check
+    print("START COMMAND TRIGGERED")
+    print("START_PIC VALUE =", START_PIC)
 
-    txt = """
+    if START_PIC:
+        print("START_PIC IS WORKING ✅")
+    else:
+        print("START_PIC NOT FOUND ❌")
+
+    text = """
 🤖 AUTO RENAME BOT
 
-━━━━━━━━━━━━━━━━━━
 ✨ Welcome!
-━━━━━━━━━━━━━━━━━━
-
 📌 Bot is working successfully
-
 ⚡ Use /help to see commands
 """
 
@@ -130,18 +139,16 @@ async def start(client, message):
         ]
     )
 
-    # 🔥 TEST FIRST (text check)
     await message.reply_text("START WORKING")
 
-    # 🔥 IMAGE VERSION (if START_PIC works)
-    # uncomment this when ready
-    """
-    await message.reply_photo(
-        photo=START_PIC,
-        caption=txt,
-        reply_markup=buttons
-    )
-    """
+    if START_PIC:
+        await message.reply_photo(
+            photo=START_PIC,
+            caption=text,
+            reply_markup=buttons
+        )
+    else:
+        await message.reply_text(text, reply_markup=buttons)
         
 # ================= HELP =================
 
