@@ -3,7 +3,7 @@ import re
 import time
 from threading import Thread
 from flask import Flask
-From plugins import start
+import plugins.start
 from pyrogram import Client, filters
 from pyrogram.types import (
     InlineKeyboardMarkup,
