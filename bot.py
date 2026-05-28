@@ -90,14 +90,33 @@ async def progress_bar(current, total, message, start, text):
 # ================= START (FIXED DUPLICATE ISSUE REMOVED) =================
 
 START_PIC = os.getenv("START_PIC", "https://ibb.co/N6sFQf4j" )
-
 @bot.on_message(filters.command("start"))
 async def start(client, message):
 
-    print("🔥 START COMMAND HIT")
+    text = """
+🤖 AUTO RENAME BOT
+
+✨ Welcome!
+📌 Bot is working successfully
+"""
+
+    print("START HIT")
     print("START_PIC =", START_PIC)
 
-    await message.reply_text("START WORKING")
+    if START_PIC and START_PIC.startswith("http"):
+        try:
+            await message.reply_photo(
+                photo=START_PIC,
+                caption=text
+            )
+            print("PHOTO SENT ✅")
+        except Exception as e:
+            print("PHOTO ERROR ❌", e)
+            await message.reply_text(text)
+    else:
+        print("NO START_PIC ❌")
+        await message.reply_text(text)
+
 
 # ================= PREFIX =================
 
