@@ -1,30 +1,36 @@
-import random
 from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from database.users import add_user
-from config import START_TEXT, HELP_TEXT, PICS, UPDATES
+from config import START_TEXT, HELP_TEXT, START_PIC, UPDATES
 
-@Client.on_message(filters.command("start"))
-async def start(client, message):
-    user_id = message.from_user.id
-    await add_user(user_id)
 
-    # Checking if PICS is a list or a single string
-    start_pic = random.choice(PICS) if isinstance(PICS, list) else PICS
-
-    buttons = InlineKeyboardMarkup([
+def get_start_buttons():
+    return InlineKeyboardMarkup([
         [
-            InlineKeyboardButton("Settings", callback_data="settings")
+            InlineKeyboardButton("📖 Help", callback_data="help_menu"),
+            InlineKeyboardButton("❄️ Update", url=UPDATES),
         ],
         [
-            InlineKeyboardButton("Updates", url=UPDATES),
-            InlineKeyboardButton("Support", url="https://t.me/yoursupport")
+            InlineKeyboardButton("About ☘️", callback_data="about_menu")
         ]
     ])
 
-    await message.reply_photo(
-        photo=start_pic,
-        caption=START_TEXT,
-        reply_markup=buttons
-    )
-    
+
+@Client.on_message(filters.command("start") & filters.private)
+async def start_handler(client, message):
+
+    try:
+        await message.reply_photo(
+            photo=START_PIC,
+            caption=START_TEXT,
+            reply_markup=get_start_buttons()
+        )
+    except Exception:
+        await message.reply_text(
+            START_TEXT,
+            reply_markup=get_start_buttons()
+        )
+
+
+@Client.on_message(filters.command("help") & filters.private)
+async def help_handler(client, message):
+    await message.reply_text(HELP_TEXT)
