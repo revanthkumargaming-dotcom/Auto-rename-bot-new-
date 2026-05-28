@@ -144,11 +144,11 @@ async def start(client, message):
         ]
     )
 
-    await message.reply_text(
-        txt,
+    await message.reply_photo(
+        photo=START_PIC,
+        caption=txt,
         reply_markup=buttons
     )
-
 # ================= HELP =================
 
 @bot.on_message(filters.command("help"))
