@@ -1,4 +1,5 @@
 from pyrogram import Client, filters
+from config import START_TEXT, HELP_TEXT, PICS, UPDATES
 from pyrogram.types import (
     InlineKeyboardMarkup,
     InlineKeyboardButton
