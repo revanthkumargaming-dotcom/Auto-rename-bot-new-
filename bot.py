@@ -11,6 +11,12 @@ from pyrogram.types import (
 
 from config import *
 
+# ================= DEBUG =================
+
+print("API_ID =", API_ID)
+print("API_HASH =", API_HASH)
+print("BOT_TOKEN =", BOT_TOKEN)
+
 # ================= FLASK SERVER =================
 
 app = Flask(__name__)
@@ -49,25 +55,25 @@ async def start(client, message):
             [
                 InlineKeyboardButton(
                     "🔥 Join Channel",
-                    url=f"https://t.me/{FORCE_SUB_CHANNEL}"
+                    url="https://t.me/YOUR_CHANNEL_USERNAME"
                 )
             ]
         ]
     )
 
-    txt = f"""
-**🤖 {BOT_NAME} Started Successfully**
+    txt = """
+**🤖 Auto Rename Bot Started Successfully**
 
 **Available Commands**
 
-`/setcaption` - Set Caption  
-`/delcaption` - Delete Caption  
+`/setcaption` - Set Caption
+`/delcaption` - Delete Caption
 
-`/setthumb` - Set Thumbnail  
-`/delthumb` - Delete Thumbnail  
+`/setthumb` - Set Thumbnail
+`/delthumb` - Delete Thumbnail
 
-`/sequence on` - Enable Sequence  
-`/sequence off` - Disable Sequence  
+`/sequence on` - Enable Sequence
+`/sequence off` - Disable Sequence
 
 `/help` - Help Menu
 """
@@ -86,8 +92,8 @@ async def help_cmd(client, message):
         """
 **📌 How To Use**
 
-1️⃣ Send Any File  
-2️⃣ Bot Will Auto Rename  
+1️⃣ Send Any File
+2️⃣ Bot Will Auto Rename
 3️⃣ Receive Renamed File ✅
 """
     )
@@ -109,6 +115,8 @@ async def set_caption(client, message):
     await message.reply_text(
         "**✅ Caption Saved Successfully**"
     )
+
+# ================= DELETE CAPTION =================
 
 @bot.on_message(filters.command("delcaption"))
 async def del_caption(client, message):
@@ -138,6 +146,8 @@ async def save_thumb(client, message):
     await message.reply_text(
         "**✅ Thumbnail Saved Successfully**"
     )
+
+# ================= DELETE THUMB =================
 
 @bot.on_message(filters.command("delthumb"))
 async def del_thumb(client, message):
