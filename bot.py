@@ -102,53 +102,37 @@ async def progress_bar(
 
 # ================= START =================
 from pyrogram import Client, filters
-from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 import os
+
+API_ID = int(os.getenv("API_ID", "123456"))
+API_HASH = os.getenv("API_HASH", "api_hash")
+BOT_TOKEN = os.getenv("BOT_TOKEN", "bot_token")
+
+app = Client(
+    "my_bot",
+    api_id=API_ID,
+    api_hash=API_HASH,
+    bot_token=BOT_TOKEN
+)
 
 START_PIC = os.getenv("START_PIC")
 
 
-@Client.on_message(filters.command("start"))
+@app.on_message(filters.command("start"))
 async def start(client, message):
 
-    # 🔥 Render logs check
-    print("START COMMAND TRIGGERED")
-    print("START_PIC VALUE =", START_PIC)
-
-    if START_PIC:
-        print("START_PIC IS WORKING ✅")
-    else:
-        print("START_PIC NOT FOUND ❌")
-
-    text = """
-🤖 AUTO RENAME BOT
-
-✨ Welcome!
-📌 Bot is working successfully
-⚡ Use /help to see commands
-"""
-
-    buttons = InlineKeyboardMarkup(
-        [
-            [
-                InlineKeyboardButton(
-                    "🔥 Join Channel",
-                    url="https://t.me/YOUR_CHANNEL_USERNAME"
-                )
-            ]
-        ]
-    )
+    print("START WORKING")
 
     await message.reply_text("START WORKING")
 
-    if START_PIC:
-        await message.reply_photo(
-            photo=START_PIC,
-            caption=text,
-            reply_markup=buttons
-        )
-    else:
-        await message.reply_text(text, reply_markup=buttons)
+
+@app.on_message(filters.command("help"))
+async def help_cmd(client, message):
+
+    await message.reply_text("HELP WORKING")
+
+
+app.run()
         
 # ================= HELP =================
 
