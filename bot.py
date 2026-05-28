@@ -94,14 +94,10 @@ START_PIC = os.getenv("START_PIC", "https://ibb.co/N6sFQf4j" )
 @bot.on_message(filters.command("start"))
 async def start(client, message):
 
-    print("START WORKING")
+    print("🔥 START COMMAND HIT")
+    print("START_PIC =", START_PIC)
 
     await message.reply_text("START WORKING")
-
-@bot.on_message(filters.command("help"))
-async def help_cmd(client, message):
-
-    await message.reply_text("HELP WORKING")
 
 # ================= PREFIX =================
 
