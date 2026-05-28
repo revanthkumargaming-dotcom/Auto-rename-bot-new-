@@ -87,23 +87,6 @@ async def progress_bar(current, total, message, start, text):
     except:
         pass
 
-# ================= START  =================
-@bot.on_message(filters.command("start"))
-import from start py
-
-    print("--- START COMMAND TRIGGERED ---")
-    
-    try:
-        await message.reply_photo(
-            photo=start_pic,
-            caption=text
-        )
-        print("PHOTO SENT SUCCESSFULLY ✅")
-    except Exception as e:
-        print(f"PHOTO FAILED ❌: {e}")
-        await message.reply_text(text)
-        
-
 # ================= PREFIX =================
 
 @bot.on_message(filters.command("prefix"))
