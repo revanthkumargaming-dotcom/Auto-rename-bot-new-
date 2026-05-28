@@ -434,15 +434,14 @@ async def end_sequence(client, message):
 
     user_id = message.from_user.id
 
-    files = sequence_files.get(
-        user_id,
-        []
-    )
+    files = sequence_files.get(user_id, [])
 
     if not files:
         return await message.reply_text(
             "**❌ No Files Found**"
         )
+
+    # ===== SORT FILES =====
 
     def extract_number(file_name):
 
@@ -466,22 +465,31 @@ async def end_sequence(client, message):
         key=lambda x: extract_number(
             (
                 x.document.file_name
-                if x.document else
-                x.video.file_name
+                if x.document
+                else x.video.file_name
             )
         )
     )
 
     await message.reply_text(
-        f"**📤 Uploading {len(files)} Files In Order...**"
+        f"**📂 Sending {len(files)} Files In Correct Order...**"
     )
+
+    # ===== RESEND =====
 
     for msg_data in files:
 
-        await process_file(
-            msg_data,
-            message
+        file = (
+            msg_data.document
+            or msg_data.video
+            or msg_data.audio
         )
+
+        await message.reply_cached_media(
+            file.file_id
+        )
+
+    # ===== RESET =====
 
     sequence_mode[user_id] = False
     sequence_files[user_id] = []
