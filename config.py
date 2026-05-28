@@ -7,4 +7,4 @@ BOT_TOKEN = os.environ.get("BOT_TOKEN", "8849121451:AAFGdIoQiV6SR_LOnzW5hDgwztTY
 MONGO_URL = os.getenv( "MONGO_URL",  "mongodb+srv://rupamedical:dQv9oKG7QK93BkIh@james.oufkybu.mongodb.net/?appName=james")
 LOG_CHANNEL = int(os.getenv("LOG_CHANNEL", "0"))
 ADMIN = 7340960697
-START_PIC = "https://res.cloudinary.com/dtz0urit6/image/upload/f_jpg,q_auto/cloudinary-tools-uploads/lz2owusibipnjwgas2my.jpg"
+START_PIC = "https://ibb.co/N6sFQf4j"
