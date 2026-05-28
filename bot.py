@@ -101,35 +101,22 @@ async def progress_bar(
         pass
 
 # ================= START =================
-
 @bot.on_message(filters.command("start"))
 async def start(client, message):
 
+    # 🔥 DEBUG PRINT (Render logs lo check cheyyadaniki)
+    print("START_PIC =", START_PIC)
+
     txt = """
-**🤖 AUTO RENAME BOT**
+🤖 AUTO RENAME BOT
 
-**Available Commands**
+━━━━━━━━━━━━━━━━━━
+✨ Welcome!
+━━━━━━━━━━━━━━━━━━
 
-`/prefix`
-`/suffix`
+📌 Bot is working successfully
 
-`/autorename`
-
-`/sequence`
-`/endsequence`
-
-`/customfont`
-`/font`
-
-`/setcaption`
-`/delcaption`
-
-`/setthumb`
-`/delthumb`
-
-`/metadata`
-
-`/help`
+⚡ Use /help to see commands
 """
 
     buttons = InlineKeyboardMarkup(
@@ -143,17 +130,19 @@ async def start(client, message):
         ]
     )
 
+    # 🔥 TEST FIRST (text check)
+    await message.reply_text("START WORKING")
+
+    # 🔥 IMAGE VERSION (if START_PIC works)
+    # uncomment this when ready
+    """
     await message.reply_photo(
         photo=START_PIC,
         caption=txt,
         reply_markup=buttons
-        @bot.on_message(filters.command("start"))
-async def start(client, message):
-
-    print("START_PIC =", START_PIC)
-
-    await message.reply_text("START WORKING")
     )
+    """
+        
 # ================= HELP =================
 
 @bot.on_message(filters.command("help"))
