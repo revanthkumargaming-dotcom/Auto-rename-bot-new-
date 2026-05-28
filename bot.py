@@ -147,6 +147,12 @@ async def start(client, message):
         photo=START_PIC,
         caption=txt,
         reply_markup=buttons
+        @bot.on_message(filters.command("start"))
+async def start(client, message):
+
+    print("START_PIC =", START_PIC)
+
+    await message.reply_text("START WORKING")
     )
 # ================= HELP =================
 
