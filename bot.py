@@ -87,16 +87,9 @@ async def progress_bar(current, total, message, start, text):
     except:
         pass
 
-# ================= START (FIXED DUPLICATE ISSUE REMOVED) =================
+# ================= START  =================
 @bot.on_message(filters.command("start"))
-async def start(client, message):
-    # Using a reliable image link
-    start_pic = "https://graph.org/file/e62e3612b704c35e98583.jpg"
-    
-    text = """🤖 AUTO RENAME BOT
-
-✨ Welcome!
-📌 Bot is working successfully"""
+import from start py
 
     print("--- START COMMAND TRIGGERED ---")
     
