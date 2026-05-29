@@ -1,6 +1,7 @@
 from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from config import START_TEXT, HELP_TEXT, START_PIC
+
+from config import START_TEXT, HELP_TEXT, START_PIC, UPDATES
 
 
 def get_start_buttons():
@@ -21,16 +22,25 @@ async def start_handler(client, message):
     try:
         await message.reply_photo(
             photo=START_PIC,
-            caption=START_TEXT,
+            caption=START_TEXT.format(
+                mention=message.from_user.mention
+            ),
             reply_markup=get_start_buttons()
         )
-    except Exception:
+
+    except Exception as e:
+
+        print("START ERROR =", e)
+
         await message.reply_text(
-            START_TEXT,
+            START_TEXT.format(
+                mention=message.from_user.mention
+            ),
             reply_markup=get_start_buttons()
         )
 
 
 @Client.on_message(filters.command("help") & filters.private)
 async def help_handler(client, message):
+
     await message.reply_text(HELP_TEXT)
