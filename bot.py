@@ -264,14 +264,18 @@ bot = Client(
 START_PIC = "https://example.com/image.jpg"
 
 # ================= START =================
+START_PIC = "https://i.ibb.co/your-image.jpg"
+
 @bot.on_message(filters.command("start"))
 async def start(client, message):
 
     print("START COMMAND HIT")
-    print("START_PIC =", "https://ibb.co/N6sFQf4j.jpg")
+    print("START_PIC =", START_PIC)
 
-    await message.reply_text("START WORKING")
-
+    await message.reply_photo(
+        photo=START_PIC,
+        caption="START WORKING 🚀"
+    )
 # ================= FILE HANDLER =================
 @bot.on_message(filters.document | filters.video | filters.audio)
 async def rename_file(client, message):
@@ -306,7 +310,7 @@ async def rename_file(client, message):
         caption=caption
     )
 
-    os.remove(file)
+    os.remove(file) 
 
 # ================= START BOT =================
 bot.run()
