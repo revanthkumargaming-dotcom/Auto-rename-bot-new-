@@ -84,19 +84,6 @@ async def progress_bar(current, total, message, start, text):
     except:
         pass
 
-# ================= START COMMAND =================
-
-@bot.on_message(filters.command("start"))
-async def start(client, message):
-
-    print("🔥 START COMMAND HIT")
-    print("🔥 START_PIC =", START_PIC)
-
-    await message.reply_photo(
-        photo=START_PIC,
-        caption="🚀 Auto Rename Bot Working Successfully"
-    )
-
 # ================= PREFIX =================
 
 @bot.on_message(filters.command("prefix"))
@@ -273,6 +260,18 @@ async def end_sequence(client, message):
     sequence_files[user_id] = []
 
     await message.reply_text("✅ Sequence Completed")
+# ================= START COMMAND =================
+
+@bot.on_message(filters.command("start"))
+async def start(client, message):
+
+    print("🔥 START COMMAND HIT")
+    print("🔥 START_PIC =", START_PIC)
+
+    await message.reply_photo(
+        photo=START_PIC,
+        caption="🚀 Auto Rename Bot Working Successfully"
+    )
 
 # ================= FILE HANDLER =================
 
@@ -283,27 +282,33 @@ async def rename_file(client, message):
 
     print(f"📥 FILE RECEIVED FROM USER: {user_id}")
 
+    # Sequence Mode
     if sequence_mode.get(user_id):
 
         sequence_files.setdefault(user_id, []).append(message)
 
         return await message.reply_text("📥 File Added")
 
+    # Download File
     file_path = await message.download()
 
     base = os.path.basename(file_path)
 
+    # User Settings
     prefix = user_prefix.get(user_id, "")
     suffix = user_suffix.get(user_id, "")
     font = user_font.get(user_id, "normal")
 
     auto_format = user_autorename.get(user_id)
 
+    # Rename Logic
     if auto_format:
         new_name = auto_format.replace("{filename}", base)
+
     else:
         new_name = f"{prefix} RENAMED_{base} {suffix}".strip()
 
+    # Font Style
     if font == "bold":
         caption = f"**{new_name}**"
 
@@ -316,19 +321,23 @@ async def rename_file(client, message):
     else:
         caption = new_name
 
+    # Custom Caption
     custom_caption = user_caption.get(user_id)
 
     if custom_caption:
         caption += f"\n\n{custom_caption}"
 
+    # Thumbnail
     thumb = user_thumbnail.get(user_id)
 
+    # Progress
     start_time = time.time()
 
     status = await message.reply_text("📥 Downloading...")
 
     print(f"✅ RENAMED FILE: {new_name}")
 
+    # Upload File
     await message.reply_document(
         document=file_path,
         file_name=new_name,
@@ -342,8 +351,10 @@ async def rename_file(client, message):
         )
     )
 
+    # Delete Progress Message
     await status.delete()
 
+    # Remove Temp File
     if os.path.exists(file_path):
         os.remove(file_path)
 
