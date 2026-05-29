@@ -8,3 +8,12 @@ MONGO_URL = os.getenv( "MONGO_URL",  "mongodb+srv://rupamedical:dQv9oKG7QK93BkIh
 LOG_CHANNEL = int(os.getenv("LOG_CHANNEL", "0"))
 ADMIN = 7340960697
 START_PIC = os.getenv("START_PIC", "https://ibb.co/N6sFQf4j.jpg")
+START_TEXT = """
+👋 Hello {mention}
+
+✨ Welcome to Auto Rename Bot
+
+📂 Send me any file and I will automatically rename it.
+
+⚡ Fast • Simple • Easy To Use
+"""
