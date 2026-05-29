@@ -254,7 +254,6 @@ async def end_sequence(client, message):
     await message.reply_text("✅ Done")
 
 # ================= FILE HANDLER =================
-
 bot = Client(
     "mybot",
     api_id=API_ID,
@@ -264,7 +263,7 @@ bot = Client(
 
 START_PIC = "https://example.com/image.jpg"
 
-
+# ================= START =================
 @bot.on_message(filters.command("start"))
 async def start(client, message):
 
@@ -273,13 +272,14 @@ async def start(client, message):
 
     await message.reply_text("START WORKING")
 
-
-bot.run()
+# ================= FILE HANDLER =================
+@bot.on_message(filters.document | filters.video | filters.audio)
+async def rename_file(client, message):
 
     user_id = message.from_user.id
 
     if sequence_mode.get(user_id):
-        sequence_files[user_id].append(message)
+        sequence_files.setdefault(user_id, []).append(message)
         return await message.reply_text("📥 File Added")
 
     file = await message.download()
@@ -301,12 +301,15 @@ bot.run()
         caption = new_name
 
     await message.reply_document(
-        file,
+        document=file,
         file_name=new_name,
         caption=caption
     )
 
     os.remove(file)
+
+# ================= START BOT =================
+bot.run()
 
 # ================= RUN =================
 
