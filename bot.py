@@ -4,6 +4,7 @@ import time
 from threading import Thread
 from flask import Flask
 from pyrogram import Client, filters
+import plugins.start
 from pyrogram.types import (
     InlineKeyboardMarkup,
     InlineKeyboardButton
