@@ -1,6 +1,6 @@
 from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from config import START_TEXT, HELP_TEXT, START_PIC, UPDATES
+from config import START_TEXT, HELP_TEXT, START_PIC
 
 
 def get_start_buttons():
