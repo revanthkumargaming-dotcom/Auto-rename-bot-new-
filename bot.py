@@ -268,7 +268,7 @@ START_PIC = "https://example.com/image.jpg"
 async def start(client, message):
 
     print("START COMMAND HIT")
-    print("START_PIC =", START_PIC)
+    print("START_PIC =", )
 
     await message.reply_text("START WORKING")
 
