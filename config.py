@@ -17,3 +17,16 @@ START_TEXT = """
 
 ⚡ Fast • Simple • Easy To Use
 """
+HELP_TEXT = """
+📖 Help Menu
+
+1️⃣ /start - Bot start cheyyadaniki
+2️⃣ Send any file - Rename process start avtundi
+
+⚡ How it works:
+• File send cheyyi
+• New name set cheyyi
+• Bot rename chesi return chestundi
+
+❓ Any issue unte support channel check cheyyi
+"""
