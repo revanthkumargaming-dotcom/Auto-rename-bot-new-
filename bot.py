@@ -255,10 +255,6 @@ async def end_sequence(client, message):
 
 # ================= FILE HANDLER =================
 
-@bot.on_message(filters.document | filters.video | filters.audio)
-async def rename_file(client, message):
-from pyrogram import Client, filters
-
 bot = Client(
     "mybot",
     api_id=API_ID,
@@ -272,7 +268,7 @@ START_PIC = "https://example.com/image.jpg"
 @bot.on_message(filters.command("start"))
 async def start(client, message):
 
-    print("START COMMAND HIT AYYINDI")
+    print("START COMMAND HIT")
     print("START_PIC =", START_PIC)
 
     await message.reply_text("START WORKING")
