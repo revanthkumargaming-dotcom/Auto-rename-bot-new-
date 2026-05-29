@@ -1,46 +1,33 @@
 from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
-from config import START_TEXT, HELP_TEXT, START_PIC, UPDATES
+from config import *
 
 
 def get_start_buttons():
     return InlineKeyboardMarkup([
         [
-            InlineKeyboardButton("📖 Help", callback_data="help_menu"),
-            InlineKeyboardButton("❄️ Update", url=UPDATES),
-        ],
-        [
-            InlineKeyboardButton("About ☘️", callback_data="about_menu")
+            InlineKeyboardButton(
+                "📖 Help",
+                callback_data="help_menu"
+            )
         ]
     ])
 
 
-@Client.on_message(filters.command("start") & filters.private)
+@Client.on_message(filters.command("start"))
 async def start_handler(client, message):
 
+    print("🔥 START COMMAND RECEIVED")
+
     try:
-        await message.reply_photo(
-            photo=START_PIC,
-            caption=START_TEXT.format(
-                mention=message.from_user.mention
-            ),
-            reply_markup=get_start_buttons()
+
+        await message.reply_text(
+            "✅ START TEXT WORKING"
         )
+
+        print("✅ TEXT SENT")
 
     except Exception as e:
 
-        print("START ERROR =", e)
-
-        await message.reply_text(
-            START_TEXT.format(
-                mention=message.from_user.mention
-            ),
-            reply_markup=get_start_buttons()
-        )
-
-
-@Client.on_message(filters.command("help") & filters.private)
-async def help_handler(client, message):
-
-    await message.reply_text(HELP_TEXT)
+        print("❌ START ERROR =", e)
