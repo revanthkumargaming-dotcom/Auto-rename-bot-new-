@@ -43,23 +43,6 @@ user_metadata = {}
 sequence_mode = {}
 sequence_files = {}
 
-# ================= START BUTTONS =================
-
-def start_buttons():
-    return InlineKeyboardMarkup([
-        [
-            InlineKeyboardButton("📁 Guide", callback_data="guide"),
-            InlineKeyboardButton("⚙️ Commands", callback_data="cmds")
-        ],
-        [
-            InlineKeyboardButton("🎨 Fonts", callback_data="fonts"),
-            InlineKeyboardButton("🔁 Sequence", callback_data="seq")
-        ],
-        [
-            InlineKeyboardButton("❌ Close", callback_data="close")
-        ]
-    ])
-
 # ================= START =================
 
 @bot.on_message(filters.command("start"))
@@ -72,41 +55,19 @@ async def start(_, msg):
 
     await msg.reply_photo(
         photo=photo,
-        caption=START_TEXT.format(mention=msg.from_user.mention),
-        reply_markup=start_buttons()
+        caption=START_TEXT.format(mention=msg.from_user.mention)
     )
 
-# ================= CALLBACK =================
-
-@bot.on_callback_query()
-async def cb(_, query):
-
-    d = query.data
-
-    if d == "guide":
-        await query.message.edit_text("📁 Send file → bot renames it")
-
-    elif d == "cmds":
-        await query.message.edit_text(
-            "/autorename\n/font\n/metadata\n/sequence\n/endsequence"
-        )
-
-    elif d == "fonts":
-        await query.message.edit_text("bold\nitalic\nmono\nnormal")
-
-    elif d == "seq":
-        await query.message.edit_text("Sequence mode ON/OFF")
-
-    elif d == "close":
-        await query.message.delete()
-
-# ================= OWNER PANEL =================
+# ================= OWNER COMMANDS =================
 
 @bot.on_message(filters.command("adduser"))
 async def add_user(_, msg):
 
     if msg.from_user.id != OWNER_ID:
-        return
+        return await msg.reply_text("❌ Only owner")
+
+    if len(msg.command) < 2:
+        return await msg.reply_text("Usage: /adduser user_id")
 
     uid = int(msg.command[1])
     allowed_users.add(uid)
@@ -117,7 +78,10 @@ async def add_user(_, msg):
 async def remove_user(_, msg):
 
     if msg.from_user.id != OWNER_ID:
-        return
+        return await msg.reply_text("❌ Only owner")
+
+    if len(msg.command) < 2:
+        return await msg.reply_text("Usage: /removeuser user_id")
 
     uid = int(msg.command[1])
     allowed_users.discard(uid)
@@ -130,7 +94,10 @@ async def users(_, msg):
     if msg.from_user.id != OWNER_ID:
         return
 
-    await msg.reply_text("\n".join(map(str, allowed_users)) or "No users")
+    if not allowed_users:
+        return await msg.reply_text("No users")
+
+    await msg.reply_text("\n".join(map(str, allowed_users)))
 
 # ================= FEATURES =================
 
@@ -139,6 +106,9 @@ async def autorename(_, msg):
 
     if not is_auth(msg.from_user.id):
         return
+
+    if len(msg.command) < 2:
+        return await msg.reply_text("Usage: /autorename NEW_{filename}")
 
     user_autorename[msg.from_user.id] = msg.text.split(None, 1)[1]
     await msg.reply_text("✅ Saved")
@@ -149,6 +119,9 @@ async def font(_, msg):
     if not is_auth(msg.from_user.id):
         return
 
+    if len(msg.command) < 2:
+        return await msg.reply_text("Usage: /font bold")
+
     user_font[msg.from_user.id] = msg.text.split(None, 1)[1].lower()
     await msg.reply_text("✅ Font saved")
 
@@ -157,6 +130,9 @@ async def metadata(_, msg):
 
     if not is_auth(msg.from_user.id):
         return
+
+    if len(msg.command) < 2:
+        return await msg.reply_text("Usage: /metadata text")
 
     user_metadata[msg.from_user.id] = msg.text.split(None, 1)[1]
     await msg.reply_text("✅ Metadata saved")
@@ -182,6 +158,11 @@ async def seq_end(_, msg):
 
     files = sequence_files.get(msg.from_user.id, [])
 
+    if not files:
+        return await msg.reply_text("❌ No files")
+
+    await msg.reply_text("📤 Sending...")
+
     for m in files:
         f = await m.download()
         await msg.reply_document(f)
@@ -202,41 +183,44 @@ async def handler(_, msg):
     if not is_auth(uid):
         return await msg.reply_text("❌ Not authorised")
 
-    if sequence_mode.get(uid):
-        sequence_files.setdefault(uid, []).append(msg)
-        return await msg.reply_text("📥 Added")
+    try:
+        status = await msg.reply_text("📥 Downloading...")
 
-    status = await msg.reply_text("📥 Downloading...")
+        file = await msg.download()
 
-    file = await msg.download()
+        base = os.path.basename(file)
 
-    base = os.path.basename(file)
+        rename = user_autorename.get(uid)
+        font = user_font.get(uid, "normal")
+        meta = user_metadata.get(uid)
 
-    rename = user_autorename.get(uid)
-    font = user_font.get(uid, "normal")
-    meta = user_metadata.get(uid)
+        new_name = rename.replace("{filename}", base) if rename else base
 
-    new_name = rename.replace("{filename}", base) if rename else base
+        caption = new_name
 
-    caption = new_name + (f"\n\n{meta}" if meta else "")
+        if meta:
+            caption += f"\n\n{meta}"
 
-    if font == "bold":
-        caption = f"**{caption}**"
-    elif font == "italic":
-        caption = f"__{caption}__"
-    elif font == "mono":
-        caption = f"`{caption}`"
+        if font == "bold":
+            caption = f"**{caption}**"
+        elif font == "italic":
+            caption = f"__{caption}__"
+        elif font == "mono":
+            caption = f"`{caption}`"
 
-    await status.edit("📤 Uploading...")
+        await status.edit("📤 Uploading...")
 
-    await msg.reply_document(
-        document=file,
-        file_name=new_name,
-        caption=caption
-    )
+        await msg.reply_document(
+            document=file,
+            file_name=new_name,
+            caption=caption
+        )
 
-    await status.delete()
-    os.remove(file)
+        await status.delete()
+        os.remove(file)
+
+    except Exception as e:
+        await msg.reply_text(f"❌ Error: {e}")
 
 # ================= RUN =================
 
