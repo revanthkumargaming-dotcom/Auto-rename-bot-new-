@@ -7,7 +7,12 @@ BOT_TOKEN = os.environ.get("BOT_TOKEN", "8849121451:AAFGdIoQiV6SR_LOnzW5hDgwztTY
 MONGO_URL = os.getenv( "MONGO_URL",  "mongodb+srv://rupamedical:dQv9oKG7QK93BkIh@james.oufkybu.mongodb.net/?appName=james")
 LOG_CHANNEL = int(os.getenv("LOG_CHANNEL", "0"))
 ADMIN = 7340960697
-START_PIC = os.getenv("START_PIC", "https://ibb.co/Hff6FyNH")
+START_PICS = [
+    "https://ibb.co/qFcPSfyX",
+    "https://ibb.co/s91Js70c",
+    "https://ibb.co/q3j9HLQW",
+    "https://ibb.co/TDsS44Qw"
+]
 START_TEXT = """
 👋 Hello {mention}
 
