@@ -359,7 +359,8 @@ async def rename_file(client, message):
         os.remove(file_path)
 
 # ================= START BOT =================
-
 print("🚀 Bot Started Successfully")
+print("🔥 START_PIC =", START_PIC)
+print("🔥 START_TEXT =", START_TEXT)
 
 bot.run()
