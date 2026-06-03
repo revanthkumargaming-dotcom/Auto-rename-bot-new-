@@ -288,6 +288,13 @@ async def start(client, message):
 @bot.on_message(filters.command("start"))
 async def start(client, message):
 
+    await message.reply_photo(
+        photo=START_PIC,
+        caption=START_TEXT.format(
+            mention=message.from_user.mention
+        )
+    )
+
     print("🔥 START COMMAND HIT")
 
     await message.reply_text("START WORKING")
