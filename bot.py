@@ -262,29 +262,6 @@ async def end_sequence(client, message):
     await message.reply_text("✅ Sequence Completed")
 # ================= START COMMAND =================
 
-@bot.on_message(filters.command("start"))
-async def start(client, message):
-
-    try:
-        await message.reply_photo(
-            photo=START_PIC,
-            caption=START_TEXT
-        )
-
-    except Exception as e:
-        await message.reply_text(f"ERROR:\n{e}")
-        print("START ERROR:", e)
-
-    print("🔥 START COMMAND HIT")
-    print("🔥 START_PIC =", START_PIC)
-
-    await message.reply_photo(
-        photo=START_PIC,
-        caption="🚀 Auto Rename Bot Working Successfully"
-    )
-
-# ================= FILE HANDLER =================
-
 import random
 
 @bot.on_message(filters.command("start"))
@@ -301,7 +278,7 @@ async def start(client, message):
 
     print("🔥 START COMMAND HIT")
 
-    await message.reply_text("START WORKING")
+# ================= FILE HANDLER =================
 
     user_id = message.from_user.id
 
