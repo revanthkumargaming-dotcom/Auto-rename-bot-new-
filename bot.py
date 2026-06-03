@@ -3,8 +3,8 @@ import time
 import random
 from flask import Flask
 from threading import Thread
+
 from pyrogram import Client, filters
-from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 from config import *
 
@@ -14,7 +14,7 @@ app = Flask(__name__)
 
 @app.route("/")
 def home():
-    return "Bot Running"
+    return "Bot Is Running Successfully ✅"
 
 Thread(target=lambda: app.run(host="0.0.0.0", port=8080)).start()
 
@@ -27,202 +27,157 @@ bot = Client(
     bot_token=BOT_TOKEN
 )
 
-# ================= AUTH =================
-
-allowed_users = set()
-
-def is_auth(uid):
-    return uid == OWNER_ID or uid in allowed_users
-
 # ================= STORAGE =================
 
+user_prefix = {}
+user_suffix = {}
 user_autorename = {}
+user_caption = {}
 user_font = {}
 user_metadata = {}
+user_thumbnail = {}
 
 sequence_mode = {}
 sequence_files = {}
 
+# ================= PROGRESS BAR =================
+
+async def progress_bar(current, total, message, start, text):
+    try:
+        now = time.time()
+        diff = now - start
+
+        if diff == 0:
+            return
+
+        speed = current / diff
+        percentage = current * 100 / total
+
+        bar = int((current / total) * 10) * "█" + (10 - int((current / total) * 10)) * "░"
+
+        await message.edit(
+            f"{text}\n\n[{bar}]\n"
+            f"📊 {percentage:.1f}%\n"
+            f"⚡ {speed/1024/1024:.2f} MB/s"
+        )
+    except:
+        pass
+
+# ================= HELP =================
+
+@bot.on_message(filters.command("help"))
+async def help_cmd(client, message):
+    await message.reply_text(HELP_TEXT)
+
+# ================= SETTINGS =================
+
+@bot.on_message(filters.command("prefix"))
+async def prefix_cmd(client, message):
+    user_prefix[message.from_user.id] = message.text.split(None, 1)[1]
+    await message.reply_text("Prefix Saved")
+
+@bot.on_message(filters.command("suffix"))
+async def suffix_cmd(client, message):
+    user_suffix[message.from_user.id] = message.text.split(None, 1)[1]
+    await message.reply_text("Suffix Saved")
+
+@bot.on_message(filters.command("autorename"))
+async def autorename_cmd(client, message):
+    user_autorename[message.from_user.id] = message.text.split(None, 1)[1]
+    await message.reply_text("Autorename Saved")
+
+@bot.on_message(filters.command("metadata"))
+async def metadata_cmd(client, message):
+    user_metadata[message.from_user.id] = message.text.split(None, 1)[1]
+    await message.reply_text("Metadata Saved")
+
+# ================= THUMB =================
+
+@bot.on_message(filters.photo)
+async def save_thumb(client, message):
+    path = await message.download()
+    user_thumbnail[message.from_user.id] = path
+    await message.reply_text("Thumbnail Saved")
+
 # ================= START =================
 
 @bot.on_message(filters.command("start"))
-async def start(_, msg):
-
-    if not is_auth(msg.from_user.id):
-        return await msg.reply_text("❌ Not authorised")
-
+async def start_cmd(client, message):
     photo = random.choice(START_PICS)
 
-    await msg.reply_photo(
+    await message.reply_photo(
         photo=photo,
-        caption=START_TEXT.format(mention=msg.from_user.mention)
+        caption=START_TEXT.format(mention=message.from_user.mention)
     )
 
-# ================= OWNER COMMANDS =================
+# ================= MAIN FILE HANDLER =================
 
-@bot.on_message(filters.command("adduser"))
-async def add_user(_, msg):
+@bot.on_message(filters.document | filters.video | filters.audio)
+async def file_handler(client, message):
 
-    if msg.from_user.id != OWNER_ID:
-        return await msg.reply_text("❌ Only owner")
+    user_id = message.from_user.id
 
-    if len(msg.command) < 2:
-        return await msg.reply_text("Usage: /adduser user_id")
+    # sequence
+    if sequence_mode.get(user_id):
+        sequence_files.setdefault(user_id, []).append(message)
+        return await message.reply_text("Added to sequence")
 
-    uid = int(msg.command[1])
-    allowed_users.add(uid)
+    status = await message.reply_text("Downloading...")
 
-    await msg.reply_text(f"✅ Added {uid}")
+    file_path = await message.download()
 
-@bot.on_message(filters.command("removeuser"))
-async def remove_user(_, msg):
+    base = os.path.basename(file_path)
 
-    if msg.from_user.id != OWNER_ID:
-        return await msg.reply_text("❌ Only owner")
+    # rename logic
+    prefix = user_prefix.get(user_id, "")
+    suffix = user_suffix.get(user_id, "")
+    auto = user_autorename.get(user_id)
 
-    if len(msg.command) < 2:
-        return await msg.reply_text("Usage: /removeuser user_id")
+    if auto:
+        new_name = auto.replace("{filename}", base)
+    else:
+        new_name = f"{prefix}{base}{suffix}"
 
-    uid = int(msg.command[1])
-    allowed_users.discard(uid)
+    # caption
+    caption = new_name
 
-    await msg.reply_text(f"❌ Removed {uid}")
+    meta = user_metadata.get(user_id)
+    if meta:
+        caption += f"\n\n📌 {meta}"
 
-@bot.on_message(filters.command("users"))
-async def users(_, msg):
+    # upload
+    await message.reply_document(
+        document=file_path,
+        file_name=new_name,
+        caption=caption
+    )
 
-    if msg.from_user.id != OWNER_ID:
-        return
+    await status.delete()
 
-    if not allowed_users:
-        return await msg.reply_text("No users")
-
-    await msg.reply_text("\n".join(map(str, allowed_users)))
-
-# ================= FEATURES =================
-
-@bot.on_message(filters.command("autorename"))
-async def autorename(_, msg):
-
-    if not is_auth(msg.from_user.id):
-        return
-
-    if len(msg.command) < 2:
-        return await msg.reply_text("Usage: /autorename NEW_{filename}")
-
-    user_autorename[msg.from_user.id] = msg.text.split(None, 1)[1]
-    await msg.reply_text("✅ Saved")
-
-@bot.on_message(filters.command("font"))
-async def font(_, msg):
-
-    if not is_auth(msg.from_user.id):
-        return
-
-    if len(msg.command) < 2:
-        return await msg.reply_text("Usage: /font bold")
-
-    user_font[msg.from_user.id] = msg.text.split(None, 1)[1].lower()
-    await msg.reply_text("✅ Font saved")
-
-@bot.on_message(filters.command("metadata"))
-async def metadata(_, msg):
-
-    if not is_auth(msg.from_user.id):
-        return
-
-    if len(msg.command) < 2:
-        return await msg.reply_text("Usage: /metadata text")
-
-    user_metadata[msg.from_user.id] = msg.text.split(None, 1)[1]
-    await msg.reply_text("✅ Metadata saved")
+    if os.path.exists(file_path):
+        os.remove(file_path)
 
 # ================= SEQUENCE =================
 
 @bot.on_message(filters.command("sequence"))
-async def seq_start(_, msg):
-
-    if not is_auth(msg.from_user.id):
-        return
-
-    sequence_mode[msg.from_user.id] = True
-    sequence_files[msg.from_user.id] = []
-
-    await msg.reply_text("📥 Sequence started")
+async def seq_start(client, message):
+    sequence_mode[message.from_user.id] = True
+    sequence_files[message.from_user.id] = []
+    await message.reply_text("Sequence Started")
 
 @bot.on_message(filters.command("endsequence"))
-async def seq_end(_, msg):
+async def seq_end(client, message):
+    uid = message.from_user.id
 
-    if not is_auth(msg.from_user.id):
-        return
+    for msg in sequence_files.get(uid, []):
+        await message.reply_document(msg.document.file_id)
 
-    files = sequence_files.get(msg.from_user.id, [])
+    sequence_mode[uid] = False
+    sequence_files[uid] = []
 
-    if not files:
-        return await msg.reply_text("❌ No files")
-
-    await msg.reply_text("📤 Sending...")
-
-    for m in files:
-        f = await m.download()
-        await msg.reply_document(f)
-        os.remove(f)
-
-    sequence_mode[msg.from_user.id] = False
-    sequence_files[msg.from_user.id] = []
-
-    await msg.reply_text("✅ Done")
-
-# ================= FILE HANDLER =================
-
-@bot.on_message(filters.document | filters.video | filters.audio)
-async def handler(_, msg):
-
-    uid = msg.from_user.id
-
-    if not is_auth(uid):
-        return await msg.reply_text("❌ Not authorised")
-
-    try:
-        status = await msg.reply_text("📥 Downloading...")
-
-        file = await msg.download()
-
-        base = os.path.basename(file)
-
-        rename = user_autorename.get(uid)
-        font = user_font.get(uid, "normal")
-        meta = user_metadata.get(uid)
-
-        new_name = rename.replace("{filename}", base) if rename else base
-
-        caption = new_name
-
-        if meta:
-            caption += f"\n\n{meta}"
-
-        if font == "bold":
-            caption = f"**{caption}**"
-        elif font == "italic":
-            caption = f"__{caption}__"
-        elif font == "mono":
-            caption = f"`{caption}`"
-
-        await status.edit("📤 Uploading...")
-
-        await msg.reply_document(
-            document=file,
-            file_name=new_name,
-            caption=caption
-        )
-
-        await status.delete()
-        os.remove(file)
-
-    except Exception as e:
-        await msg.reply_text(f"❌ Error: {e}")
+    await message.reply_text("Sequence Ended")
 
 # ================= RUN =================
 
-print("🚀 Bot Started Successfully")
+print("Bot Started Successfully")
 bot.run()
