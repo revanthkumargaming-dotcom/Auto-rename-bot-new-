@@ -262,8 +262,9 @@ async def end_sequence(client, message):
     await message.reply_text("✅ Sequence Completed")
 # ================= START COMMAND =================
 
-@bot.on_message(filters.command("start"))
+@bot.on_message(filters.command(["start", "alive", "teststart"]))
 async def start(client, message):
+    await message.reply_text("WORKING")
 
     print("🔥 START COMMAND HIT")
     print("🔥 START_PIC =", START_PIC)
