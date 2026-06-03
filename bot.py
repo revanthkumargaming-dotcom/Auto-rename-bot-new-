@@ -285,11 +285,15 @@ async def start(client, message):
 
 # ================= FILE HANDLER =================
 
+import random
+
 @bot.on_message(filters.command("start"))
 async def start(client, message):
 
+    photo = random.choice(START_PICS)
+
     await message.reply_photo(
-        photo=START_PIC,
+        photo=photo,
         caption=START_TEXT.format(
             mention=message.from_user.mention
         )
