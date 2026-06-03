@@ -275,8 +275,12 @@ async def start(client, message):
 
 # ================= FILE HANDLER =================
 
-@bot.on_message(filters.document | filters.video | filters.audio)
-async def rename_file(client, message):
+@bot.on_message(filters.command("start"))
+async def start(client, message):
+
+    print("🔥 START COMMAND HIT")
+
+    await message.reply_text("START WORKING")
 
     user_id = message.from_user.id
 
