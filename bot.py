@@ -1,28 +1,25 @@
 import os
-import re
 import time
+import random
 from threading import Thread
 from flask import Flask
 from pyrogram import Client, filters
-from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 from config import *
 
-# ================= FLASK SERVER =================
-
+# ================= FLASK =================
 app = Flask(__name__)
 
 @app.route("/")
 def home():
-    return "Bot Is Running Successfully ✅"
+    return "Bot Running ✅"
 
-def run_web():
+def run():
     app.run(host="0.0.0.0", port=8080)
 
-Thread(target=run_web).start()
+Thread(target=run).start()
 
 # ================= BOT =================
-
 bot = Client(
     "AutoRenameBot",
     api_id=API_ID,
@@ -31,242 +28,20 @@ bot = Client(
 )
 
 # ================= STORAGE =================
-
 user_caption = {}
 user_thumbnail = {}
 user_autorename = {}
 user_prefix = {}
 user_suffix = {}
-user_metadata = {}
 user_font = {}
+user_metadata = {}
 
 sequence_mode = {}
 sequence_files = {}
 
-# ================= PROGRESS BAR =================
-
-async def progress_bar(current, total, message, start, text):
-
-    now = time.time()
-    diff = now - start
-
-    if diff == 0:
-        return
-
-    percentage = current * 100 / total
-    speed = current / diff
-
-    remaining_time = round((total - current) / speed) if speed > 0 else 0
-
-    bar_length = 20
-    filled_length = int(bar_length * current // total)
-
-    bar = "█" * filled_length + "░" * (bar_length - filled_length)
-
-    uploaded = current / 1024 / 1024
-    total_size = total / 1024 / 1024
-    speed_mb = speed / 1024 / 1024
-
-    txt = f"""
-{text}
-
-[{bar}]
-
-📊 Progress : {percentage:.1f}%
-⚡ Speed : {speed_mb:.2f} MB/s
-📥 Done : {uploaded:.2f} MB
-🗂 Total : {total_size:.2f} MB
-⏳ ETA : {remaining_time} sec
-"""
-
-    try:
-        await message.edit(txt)
-    except:
-        pass
-
-# ================= PREFIX =================
-
-@bot.on_message(filters.command("prefix"))
-async def set_prefix(client, message):
-
-    if len(message.command) < 2:
-        return await message.reply_text("Usage: /prefix text")
-
-    text = message.text.split(None, 1)[1]
-    user_prefix[message.from_user.id] = text
-
-    await message.reply_text(f"✅ Prefix Saved\n{text}")
-
-# ================= SUFFIX =================
-
-@bot.on_message(filters.command("suffix"))
-async def set_suffix(client, message):
-
-    if len(message.command) < 2:
-        return await message.reply_text("Usage: /suffix text")
-
-    text = message.text.split(None, 1)[1]
-    user_suffix[message.from_user.id] = text
-
-    await message.reply_text(f"✅ Suffix Saved\n{text}")
-
-# ================= AUTORENAME =================
-
-@bot.on_message(filters.command("autorename"))
-async def auto_rename(client, message):
-
-    if len(message.command) < 2:
-
-        current = user_autorename.get(
-            message.from_user.id,
-            "Not Set"
-        )
-
-        return await message.reply_text(
-            f"Current Auto Rename:\n{current}"
-        )
-
-    format_text = message.text.split(None, 1)[1]
-
-    user_autorename[message.from_user.id] = format_text
-
-    await message.reply_text("✅ Auto Rename Format Saved")
-
-# ================= FONT =================
-
-@bot.on_message(filters.command("customfont"))
-async def custom_font(client, message):
-
-    await message.reply_text(
-        """
-🎨 Available Fonts
-
-/font bold
-/font italic
-/font mono
-/font normal
-"""
-    )
-
-@bot.on_message(filters.command("font"))
-async def set_font(client, message):
-
-    if len(message.command) < 2:
-        return await message.reply_text("Usage: /font bold")
-
-    font = message.command[1].lower()
-
-    if font not in ["bold", "italic", "mono", "normal"]:
-        return await message.reply_text("❌ Invalid Font")
-
-    user_font[message.from_user.id] = font
-
-    await message.reply_text(f"✅ Font Changed To: {font}")
-
-# ================= CAPTION =================
-
-@bot.on_message(filters.command("setcaption"))
-async def set_caption(client, message):
-
-    if len(message.command) < 2:
-        return await message.reply_text("Usage: /setcaption text")
-
-    caption = message.text.split(None, 1)[1]
-
-    user_caption[message.from_user.id] = caption
-
-    await message.reply_text("✅ Caption Saved")
-
-@bot.on_message(filters.command("delcaption"))
-async def del_caption(client, message):
-
-    user_caption.pop(message.from_user.id, None)
-
-    await message.reply_text("🗑 Caption Deleted")
-
-# ================= THUMBNAIL =================
-
-@bot.on_message(filters.command("setthumb"))
-async def set_thumb(client, message):
-
-    await message.reply_text("📸 Send Thumbnail Photo")
-
-@bot.on_message(filters.photo)
-async def save_thumb(client, message):
-
-    path = await message.download()
-
-    user_thumbnail[message.from_user.id] = path
-
-    await message.reply_text("✅ Thumbnail Saved")
-
-@bot.on_message(filters.command("delthumb"))
-async def del_thumb(client, message):
-
-    thumb = user_thumbnail.get(message.from_user.id)
-
-    if thumb and os.path.exists(thumb):
-        os.remove(thumb)
-
-    user_thumbnail.pop(message.from_user.id, None)
-
-    await message.reply_text("🗑 Thumbnail Deleted")
-
-# ================= METADATA =================
-
-@bot.on_message(filters.command("metadata"))
-async def metadata_cmd(client, message):
-
-    if len(message.command) < 2:
-        return await message.reply_text("Usage: /metadata text")
-
-    text = message.text.split(None, 1)[1]
-
-    user_metadata[message.from_user.id] = text
-
-    await message.reply_text(f"✅ Metadata Saved\n{text}")
-
-# ================= SEQUENCE =================
-
-@bot.on_message(filters.command("sequence"))
-async def start_sequence(client, message):
-
-    user_id = message.from_user.id
-
-    sequence_mode[user_id] = True
-    sequence_files[user_id] = []
-
-    await message.reply_text("✅ Sequence Mode Started")
-
-@bot.on_message(filters.command("endsequence"))
-async def end_sequence(client, message):
-
-    user_id = message.from_user.id
-
-    files = sequence_files.get(user_id, [])
-
-    if len(files) == 0:
-        return await message.reply_text("❌ No Files Added")
-
-    for msg_data in files:
-
-        await bot.copy_message(
-            chat_id=message.chat.id,
-            from_chat_id=msg_data.chat.id,
-            message_id=msg_data.id
-        )
-
-    sequence_mode[user_id] = False
-    sequence_files[user_id] = []
-
-    await message.reply_text("✅ Sequence Completed")
-# ================= START COMMAND =================
-
-import random
-
+# ================= START =================
 @bot.on_message(filters.command("start"))
 async def start(client, message):
-
     photo = random.choice(START_PICS)
 
     await message.reply_photo(
@@ -276,93 +51,129 @@ async def start(client, message):
         )
     )
 
-    print("🔥 START COMMAND HIT")
+# ================= PREFIX =================
+@bot.on_message(filters.command("prefix"))
+async def prefix_cmd(client, message):
+    if len(message.command) < 2:
+        return await message.reply_text("Usage: /prefix text")
+
+    user_prefix[message.from_user.id] = message.text.split(None, 1)[1]
+    await message.reply_text("Prefix saved ✅")
+
+# ================= SUFFIX =================
+@bot.on_message(filters.command("suffix"))
+async def suffix_cmd(client, message):
+    if len(message.command) < 2:
+        return await message.reply_text("Usage: /suffix text")
+
+    user_suffix[message.from_user.id] = message.text.split(None, 1)[1]
+    await message.reply_text("Suffix saved ✅")
+
+# ================= AUTORENAME =================
+@bot.on_message(filters.command("autorename"))
+async def autorename_cmd(client, message):
+    if len(message.command) < 2:
+        return await message.reply_text("Usage: /autorename {filename}")
+
+    user_autorename[message.from_user.id] = message.text.split(None, 1)[1]
+    await message.reply_text("AutoRename saved ✅")
+
+# ================= FONT =================
+@bot.on_message(filters.command("font"))
+async def font_cmd(client, message):
+    if len(message.command) < 2:
+        return await message.reply_text("/font bold | italic | mono | normal")
+
+    user_font[message.from_user.id] = message.command[1].lower()
+    await message.reply_text("Font updated ✅")
+
+# ================= METADATA =================
+@bot.on_message(filters.command("metadata"))
+async def metadata_cmd(client, message):
+    if len(message.command) < 2:
+        return await message.reply_text("Usage: /metadata text")
+
+    user_metadata[message.from_user.id] = message.text.split(None, 1)[1]
+    await message.reply_text("Metadata saved ✅")
+
+# ================= SEQUENCE =================
+@bot.on_message(filters.command("sequence"))
+async def seq_start(client, message):
+    uid = message.from_user.id
+    sequence_mode[uid] = True
+    sequence_files[uid] = []
+    await message.reply_text("Sequence ON ✅")
+
+@bot.on_message(filters.command("endsequence"))
+async def seq_end(client, message):
+    uid = message.from_user.id
+
+    files = sequence_files.get(uid, [])
+    if not files:
+        return await message.reply_text("No files ❌")
+
+    for m in files:
+        await bot.copy_message(message.chat.id, m.chat.id, m.id)
+
+    sequence_mode[uid] = False
+    sequence_files[uid] = []
+    await message.reply_text("Sequence Done ✅")
 
 # ================= FILE HANDLER =================
+@bot.on_message(filters.document | filters.video | filters.audio)
+async def file_handler(client, message):
 
-    user_id = message.from_user.id
+    uid = message.from_user.id
 
-    print(f"📥 FILE RECEIVED FROM USER: {user_id}")
+    # sequence mode
+    if sequence_mode.get(uid):
+        sequence_files.setdefault(uid, []).append(message)
+        return await message.reply_text("Added to sequence 📥")
 
-    # Sequence Mode
-    if sequence_mode.get(user_id):
-
-        sequence_files.setdefault(user_id, []).append(message)
-
-        return await message.reply_text("📥 File Added")
-
-    # Download File
     file_path = await message.download()
-
     base = os.path.basename(file_path)
 
-    # User Settings
-    prefix = user_prefix.get(user_id, "")
-    suffix = user_suffix.get(user_id, "")
-    font = user_font.get(user_id, "normal")
+    prefix = user_prefix.get(uid, "")
+    suffix = user_suffix.get(uid, "")
+    font = user_font.get(uid, "normal")
+    meta = user_metadata.get(uid, "")
+    auto = user_autorename.get(uid)
 
-    auto_format = user_autorename.get(user_id)
-
-    # Rename Logic
-    if auto_format:
-        new_name = auto_format.replace("{filename}", base)
-
+    # rename logic
+    if auto:
+        new_name = auto.replace("{filename}", base)
     else:
-        new_name = f"{prefix} RENAMED_{base} {suffix}".strip()
+        new_name = f"{prefix}{base}{suffix}"
 
-    # Font Style
+    # font style
     if font == "bold":
-        caption = f"**{new_name}**"
-
+        new_name = f"**{new_name}**"
     elif font == "italic":
-        caption = f"__{new_name}__"
-
+        new_name = f"__{new_name}__"
     elif font == "mono":
-        caption = f"`{new_name}`"
+        new_name = f"`{new_name}`"
 
-    else:
-        caption = new_name
+    caption = new_name
+    if meta:
+        caption += f"\n\n{meta}"
 
-    # Custom Caption
-    custom_caption = user_caption.get(user_id)
+    thumb = user_thumbnail.get(uid)
 
-    if custom_caption:
-        caption += f"\n\n{custom_caption}"
+    status = await message.reply_text("Uploading...")
 
-    # Thumbnail
-    thumb = user_thumbnail.get(user_id)
-
-    # Progress
-    start_time = time.time()
-
-    status = await message.reply_text("📥 Downloading...")
-
-    print(f"✅ RENAMED FILE: {new_name}")
-
-    # Upload File
     await message.reply_document(
         document=file_path,
-        file_name=new_name,
+        file_name=base,
         caption=caption,
-        thumb=thumb if thumb else None,
-        progress=progress_bar,
-        progress_args=(
-            status,
-            start_time,
-            "📤 Uploading..."
-        )
+        thumb=thumb if thumb else None
     )
 
-    # Delete Progress Message
     await status.delete()
 
-    # Remove Temp File
     if os.path.exists(file_path):
         os.remove(file_path)
 
-# ================= START BOT =================
-print("🚀 Bot Started Successfully")
-print("🔥 START_PIC =", START_PIC)
-print("🔥 START_TEXT =", START_TEXT)
+# ================= RUN =================
+print("Bot Started 🚀")
 
 bot.run()
