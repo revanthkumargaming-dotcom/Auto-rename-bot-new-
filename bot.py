@@ -48,13 +48,11 @@ sequence_files = {}
 
 # ================= AUTH GUARD =================
 
-@bot.on_message(~filters.command(["start", "add", "remove"]))
-async def auth_guard(client, message):
-
-    uid = message.from_user.id
-
-    if not is_auth(uid):
-        return await message.reply_text("❌ Not authorised to use this bot")
+def check_auth(message):
+    return (
+        message.from_user
+        and is_auth(message.from_user.id)
+    )
 
 # ================= ADD USER =================
 
